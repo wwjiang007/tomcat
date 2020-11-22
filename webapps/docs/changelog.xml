@@ -17,6 +17,65 @@
 -->
 <!DOCTYPE document [
   <!ENTITY project SYSTEM "project.xml">
+
+  <!-- DTD is used to validate changelog structure at build time. BZ 64931. -->
+
+  <!ELEMENT document (project?, properties, body)>
+  <!ATTLIST document url CDATA #REQUIRED>
+
+  <!-- body and title are used both in project.xml and in this document -->
+  <!ELEMENT body ANY>
+  <!ELEMENT title (#PCDATA)>
+
+  <!-- Elements of project.xml -->
+  <!ELEMENT project (title, logo, body)>
+  <!ATTLIST project name CDATA #REQUIRED>
+  <!ATTLIST project href CDATA #REQUIRED>
+
+  <!ELEMENT logo (#PCDATA)>
+  <!ATTLIST logo href CDATA #REQUIRED>
+
+  <!ELEMENT menu (item+)>
+  <!ATTLIST menu name CDATA #REQUIRED>
+
+  <!ELEMENT item EMPTY>
+  <!ATTLIST item name CDATA #REQUIRED>
+  <!ATTLIST item href CDATA #REQUIRED>
+
+  <!-- Elements of this document -->
+  <!ELEMENT properties (author*, title, no-comments) >
+  <!ELEMENT author (#PCDATA)>
+  <!ATTLIST author email CDATA #IMPLIED>
+  <!ELEMENT no-comments EMPTY>
+
+  <!ELEMENT section (subsection)*>
+  <!ATTLIST section name CDATA #REQUIRED>
+  <!ATTLIST section rtext CDATA #IMPLIED>
+
+  <!ELEMENT subsection (changelog+)>
+  <!ATTLIST subsection name CDATA #REQUIRED>
+
+  <!ELEMENT changelog (add|update|fix|scode|docs|design)*>
+  <!ELEMENT add ANY>
+  <!ELEMENT update ANY>
+  <!ELEMENT fix ANY>
+  <!ELEMENT scode ANY>
+  <!ELEMENT docs ANY>
+  <!ELEMENT design ANY>
+
+  <!ELEMENT bug (#PCDATA)>
+  <!ELEMENT rev (#PCDATA)>
+
+  <!-- Random HTML markup tags. Add more here as needed. -->
+  <!ELEMENT a (#PCDATA)>
+  <!ATTLIST a href CDATA #REQUIRED>
+  <!ATTLIST a rel CDATA #IMPLIED>
+
+  <!ELEMENT b (#PCDATA)>
+  <!ELEMENT code (#PCDATA)>
+  <!ELEMENT em (#PCDATA)>
+  <!ELEMENT strong (#PCDATA)>
+  <!ELEMENT tt (#PCDATA)>
 ]>
 <?xml-stylesheet type="text/xsl" href="tomcat-docs.xsl"?>
 <document url="changelog.html">
@@ -38,13 +97,38 @@
 
   Fixes having an issue number are sorted by their number, ascending.
 
-  There is no ordering by add/update/fix/scode.
+  There is no ordering by add/update/fix/scode/docs/design.
 
   Other fixed issues are added to the end of the list, chronologically.
   They eventually become mixed with the numbered issues (i.e., numbered
   issues do not "pop up" wrt. others).
 -->
-<section name="Tomcat 10.0.0-M10 (markt)" rtext="in development">
+<section name="Tomcat 10.0.0-M11 (markt)" rtext="in development">
+  <subsection name="Catalina">
+    <changelog>
+      <fix>
+        <bug>64921</bug>: Ensure that the <code>LoadBalancerDrainingValve</code>
+        uses the correct setting for the secure attribute for any session
+        cookies it creates. Based on a pull request by Andreas Kurth. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Other">
+    <changelog>
+      <update>
+        Update the OWB module to Apache OpenWebBeans 2.0.20. (remm)
+      </update>
+      <update>
+        Update the CXF module to Apache CXF 3.4.1. (remm)
+      </update>
+      <add>
+        <bug>64931</bug>: Implement validation of <code>changelog.xml</code>
+        file at build time. (kkolinko)
+      </add>
+    </changelog>
+  </subsection>
+</section>
+<section name="Tomcat 10.0.0-M10 (markt)" rtext="2020-11-19">
   <subsection name="Catalina">
     <changelog>
       <fix>
@@ -65,14 +149,18 @@
         an error. (remm)
       </fix>
       <fix>
-        Remove the entry for <code>org.apache.tomcat.util.descriptor.tld.LocalStrings</code>
-        from tomcat-embed-core's GraalVM tomcat-resource.json. It no more part of the jar
-        since <a href="https://github.com/apache/tomcat/commit/3815b4951eb3acd30a0b77aafa75fbdb928d5782">
-        Fix unwanted JPMS dependency of embed-core on embed-jasper</a>. (mgrigorov)
+        Remove the entry for
+        <code>org.apache.tomcat.util.descriptor.tld.LocalStrings</code>
+        from tomcat-embed-core's GraalVM tomcat-resource.json. It no more part
+        of the jar since
+        <a href="https://github.com/apache/tomcat/commit/3815b4951eb3acd30a0b77aafa75fbdb928d5782">
+        Fix unwanted JPMS dependency of embed-core on embed-jasper</a>.
+        (mgrigorov)
       </fix>
       <fix>
-        Add org.apache.coyote.http11.Http11Nio2Protocol to the list of classes which could be instantiated
-        via reflection in GraalVM. (mgrigorov)
+        Add <code>org.apache.coyote.http11.Http11Nio2Protocol</code> to the list
+        of classes which could be instantiated via reflection in GraalVM.
+        (mgrigorov)
       </fix>
       <add>
         Add <code>JsonErrorReportValve</code> that extends the
@@ -80,14 +168,27 @@
         HTML. (kfujino)
       </add>
       <add>
-        Add GraalVM config for Tomcat JNI related classes. This makes it possible to use the APR
-        protocol in GraalVM native images. (mgrigorov)
+        Add GraalVM config for Tomcat JNI related classes. This makes it
+        possible to use the APR protocol in GraalVM native images.
+        To use it add the following to the native-image arguments:
+        <code>-H:JNIConfigurationResources=META-INF/native-image/org.apache.tomcat.embed/tomcat-embed-core/tomcat-jni.json</code>
+        (mgrigorov)
       </add>
       <fix>
         JNDIRealm connections should only be created with the container
         classloader as the thread context classloader, just like for the JAAS
         realm. (remm)
       </fix>
+      <add>
+        <bug>64871</bug>: Log a warning if Tomcat blocks access to a file
+        because it uses symlinks. (markt)
+      </add>
+      <update>
+        Rename <code>JDBCStore</code> to <code>DataSourceStore</code>
+        and remove bottlenecks for database backed session store. Legacy JDBC
+        driver configuration is no longer supported. Patch submitted by
+        Philippe Mouawad. (remm)
+      </update>
     </changelog>
   </subsection>
   <subsection name="Coyote">
@@ -100,7 +201,7 @@
       <fix>
         Fix processing of URIs with %nn encoded solidus characters when
         <code>encodedSolidusHandling</code> was set to <code>passthrough</code>
-        and the encoded solidus was preceeded by other %nn encoded characters.
+        and the encoded solidus was preceded by other %nn encoded characters.
         Based on a pull request by willmeck. (markt)
       </fix>
       <fix>
@@ -124,6 +225,13 @@
         Add additional debug logging for I/O issues when communicating with the
         user agent. (markt)
       </add>
+      <fix>
+        <bug>64830</bug>: Fix concurrency issue in HPACK decoder. (markt)
+      </fix>
+      <fix>
+        Fix a concurrency issue in the NIO connector that could cause newly
+        created connections to be removed from the poller. (markt)
+      </fix>
     </changelog>
   </subsection>
   <subsection name="Jasper">
@@ -147,12 +255,18 @@
       <update>
         Update to the Eclipse JDT compiler 4.17. (markt)
       </update>
+      <fix>
+        <bug>64849</bug>: Correct JPMS metadata for the Jakarta Expression
+        Language JARs to provide missing ServiceLoader information. (markt)
+      </fix>
     </changelog>
   </subsection>
   <subsection name="WebSocket">
     <changelog>
-      <bug>64848</bug>: Fix a variation of this memory leak when a write I/O
-      error occurs on a non-container thread. (markt)
+      <fix>
+        <bug>64848</bug>: Fix a variation of this memory leak when a write I/O
+        error occurs on a non-container thread. (markt)
+      </fix>
     </changelog>
   </subsection>
   <subsection name="Web applications">
@@ -164,6 +278,16 @@
         <bug>64797</bug>: Align manager.xml template file in Host-Manager with
         context.xml of real Manager web application. (isapir)
       </fix>
+      <add>
+        Configure the examples web applications to set
+        <code>SameSite=strict</code> for all cookies, including session cookies,
+        created by the application. (markt)
+      </add>
+      <add>
+        Configure the examples, Manager and Host Manager to use the HTTP header
+        security filter with default settings apart from no HSTS header. Based
+        on a suggestion by Debangshu Kundu. (markt)
+      </add>
     </changelog>
   </subsection>
   <subsection name="Other">
@@ -178,7 +302,9 @@
         Improvements to Russian translations. Provided by Azat. (markt)
       </add>
       <fix>
-        Update to bnd 5.2.0. (markt)
+        <bug>64870</bug>: Update to bnd 5.3.0-SNAPSHOT to work around a
+        <a href="https://bugs.openjdk.java.net/browse/JDK-8255854">JRE bug</a>.
+        (markt)
       </fix>
     </changelog>
   </subsection>
@@ -1507,10 +1633,12 @@
 </section>
 <section name="Tomcat 10.0.0-M1 (markt)" rtext="2020-02-20">
   <subsection name="General">
-    <scode>
-      This release contains all of the changes upto and including those in
-      Apache Tomcat 9.0.31 plus the additional changes listed below. (markt)
-    </scode>
+    <changelog>
+      <scode>
+        This release contains all of the changes upto and including those in
+        Apache Tomcat 9.0.31 plus the additional changes listed below. (markt)
+      </scode>
+    </changelog>
   </subsection>
   <subsection name="Catalina">
     <changelog>
