@@ -35,6 +35,7 @@ import org.apache.catalina.Globals;
 import org.apache.coyote.ActionCode;
 import org.apache.coyote.CloseNowException;
 import org.apache.coyote.Response;
+import org.apache.tomcat.util.buf.B2CConverter;
 import org.apache.tomcat.util.buf.C2BConverter;
 import org.apache.tomcat.util.res.StringManager;
 
@@ -348,6 +349,7 @@ public class OutputBuffer extends Writer {
                 // An IOException on a write is almost always due to
                 // the remote client aborting the request. Wrap this
                 // so that it can be handled better by the error dispatcher.
+                coyoteResponse.setErrorException(e);
                 throw new ClientAbortException(e);
             }
         }
@@ -560,6 +562,11 @@ public class OutputBuffer extends Writer {
         }
 
         if (charset == null) {
+            if (coyoteResponse.getCharacterEncoding() != null) {
+                // setCharacterEncoding() was called with an invalid character set
+                // Trigger an UnsupportedEncodingException
+                charset = B2CConverter.getCharset(coyoteResponse.getCharacterEncoding());
+            }
             charset = org.apache.coyote.Constants.DEFAULT_BODY_CHARSET;
         }
 

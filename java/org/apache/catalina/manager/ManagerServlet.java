@@ -580,6 +580,8 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                     } else {
                         SSLHostConfig[] sslHostConfigs = http11Protoocol.findSslHostConfigs();
                         for (SSLHostConfig sslHostConfig : sslHostConfigs) {
+                            // tlsHostName is as provided by the user so use a case insensitive
+                            // comparison as host names are case insensitive.
                             if (sslHostConfig.getHostName().equalsIgnoreCase(tlsHostName)) {
                                 found = true;
                                 http11Protoocol.reloadSslHostConfig(tlsHostName);
@@ -742,10 +744,8 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
      * @param request  Servlet request we are processing
      * @param smClient i18n messages using the locale of the client
      */
-    protected synchronized void deploy
-        (PrintWriter writer, String config, ContextName cn,
-         String tag, boolean update, HttpServletRequest request,
-         StringManager smClient) {
+    protected void deploy(PrintWriter writer, String config, ContextName cn, String tag, boolean update,
+            HttpServletRequest request, StringManager smClient) {
 
         if (config != null && config.length() == 0) {
             config = null;
@@ -812,10 +812,7 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
         }
 
         try {
-            if (isServiced(name)) {
-                writer.println(smClient.getString("managerServlet.inService", displayPath));
-            } else {
-                addServiced(name);
+            if (tryAddServiced(name)) {
                 try {
                     if (config != null) {
                         if (!configBase.mkdirs() && !configBase.isDirectory()) {
@@ -847,11 +844,13 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                         // Copy WAR to the host's appBase
                         ExpandWar.copy(uploadedWar, deployedWar);
                     }
-                    // Perform new deployment
-                    check(name);
                 } finally {
                     removeServiced(name);
                 }
+                // Perform new deployment
+                check(name);
+            } else {
+                writer.println(smClient.getString("managerServlet.inService", displayPath));
             }
         } catch (Exception e) {
             log(sm.getString("managerServlet.error.deploy", displayPath), e);
@@ -894,10 +893,7 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
 
         // Copy WAR to appBase
         try {
-            if (isServiced(name)) {
-                writer.println(smClient.getString("managerServlet.inService", displayPath));
-            } else {
-                addServiced(name);
+            if (tryAddServiced(name)) {
                 try {
                     if (!deployedWar.delete()) {
                         writer.println(smClient.getString("managerServlet.deleteFail",
@@ -905,11 +901,13 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                         return;
                     }
                     ExpandWar.copy(localWar, deployedWar);
-                    // Perform new deployment
-                    check(name);
                 } finally {
                     removeServiced(name);
                 }
+                // Perform new deployment
+                check(name);
+            } else {
+                writer.println(smClient.getString("managerServlet.inService", displayPath));
             }
         } catch (Exception e) {
             log(sm.getString("managerServlet.error.deploy", displayPath), e);
@@ -987,10 +985,7 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
         }
 
         try {
-            if (isServiced(name)) {
-                writer.println(smClient.getString("managerServlet.inService", displayPath));
-            } else {
-                addServiced(name);
+            if (tryAddServiced(name)) {
                 try {
                     if (config != null) {
                         if (!configBase.mkdirs() && !configBase.isDirectory()) {
@@ -1020,11 +1015,13 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                         }
                         ExpandWar.copy(new File(war), localWar);
                     }
-                    // Perform new deployment
-                    check(name);
                 } finally {
                     removeServiced(name);
                 }
+                // Perform new deployment
+                check(name);
+            } else {
+                writer.println(smClient.getString("managerServlet.inService", displayPath));
             }
             writeDeployResult(writer, smClient, name, displayPath);
         } catch (Throwable t) {
@@ -1496,10 +1493,7 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                 return;
             }
 
-            if (isServiced(name)) {
-                writer.println(smClient.getString("managerServlet.inService", displayPath));
-            } else {
-                addServiced(name);
+            if (tryAddServiced(name)) {
                 try {
                     // Try to stop the context first to be nicer
                     context.stop();
@@ -1523,11 +1517,13 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
                                 "managerServlet.deleteFail", xml));
                         return;
                     }
-                    // Perform new deployment
-                    check(name);
                 } finally {
                     removeServiced(name);
                 }
+                // Perform new deployment
+                check(name);
+            } else {
+                writer.println(smClient.getString("managerServlet.inService", displayPath));
             }
             writer.println(smClient.getString("managerServlet.undeployed",
                     displayPath));
@@ -1581,7 +1577,9 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
      * @param name The webapp name
      * @return <code>true</code> if a webapp with that name is being serviced
      * @throws Exception Propagate JMX invocation error
+     * @deprecated Unused. Will be removed in Tomcat 10.1.x onwards.
      */
+    @Deprecated
     protected boolean isServiced(String name)
         throws Exception {
         String[] params = { name };
@@ -1597,12 +1595,30 @@ public class ManagerServlet extends HttpServlet implements ContainerServlet {
      *
      * @param name The webapp name
      * @throws Exception Propagate JMX invocation error
+     * @deprecated Unused. Will be removed in Tomcat 10.1.x onwards.
+     *             Use {@link #tryAddServiced}
      */
+    @Deprecated
     protected void addServiced(String name)
         throws Exception {
         String[] params = { name };
         String[] signature = { "java.lang.String" };
         mBeanServer.invoke(oname, "addServiced", params, signature);
+    }
+
+
+    /**
+     * Attempt to mark a context as being serviced
+     * @param name The context name
+     * @return {@code true} if the application was marked as being serviced and
+     *         {@code false} if the application was already marked as being serviced
+     * @throws Exception Error invoking the deployer
+     */
+    protected boolean tryAddServiced(String name) throws Exception {
+        String[] params = { name };
+        String[] signature = { "java.lang.String" };
+        Boolean result = (Boolean) mBeanServer.invoke(oname, "tryAddServiced", params, signature);
+        return result.booleanValue();
     }
 
 

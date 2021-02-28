@@ -21,7 +21,9 @@ import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.lang.instrument.ClassFileTransformer;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +41,8 @@ import org.apache.catalina.util.LifecycleMBeanBase;
 import org.apache.catalina.util.ToStringUtil;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.jakartaee.ClassConverter;
+import org.apache.tomcat.jakartaee.EESpecProfile;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.UDecoder;
 import org.apache.tomcat.util.compat.JreCompat;
@@ -84,6 +88,14 @@ public class WebappLoader extends LifecycleMBeanBase implements Loader{
      * configure our ClassLoader.
      */
     private boolean delegate = false;
+
+
+    /**
+     * The profile name which will be used by the converter, or null if not used.
+     * Any invalid profile value will default to the TOMCAT profile, which
+     * converts all packages used by Tomcat.
+     */
+    private String jakartaConverter = null;
 
 
     /**
@@ -169,6 +181,32 @@ public class WebappLoader extends LifecycleMBeanBase implements Loader{
         this.delegate = delegate;
         support.firePropertyChange("delegate", Boolean.valueOf(oldDelegate),
                                    Boolean.valueOf(this.delegate));
+    }
+
+
+    /**
+     * @return a non null String if the loader will attempt to use the
+     *  Jakarta converter. The String is the name of the profile
+     *  used for conversion.
+     */
+    public String getJakartaConverter() {
+        return jakartaConverter;
+    }
+
+
+    /**
+     * Set the Jakarta converter.
+     *
+     * @param jakartaConverter The profile name which will be used by the converter
+     *   Any invalid profile value will default to the TOMCAT profile, which
+     *   converts all packages used by Tomcat.
+     */
+    public void setJakartaConverter(String jakartaConverter) {
+        String oldJakartaConverter = this.jakartaConverter;
+        this.jakartaConverter = jakartaConverter;
+        support.firePropertyChange("jakartaConverter",
+                oldJakartaConverter,
+                this.jakartaConverter);
     }
 
 
@@ -326,6 +364,20 @@ public class WebappLoader extends LifecycleMBeanBase implements Loader{
             classLoader = createClassLoader();
             classLoader.setResources(context.getResources());
             classLoader.setDelegate(this.delegate);
+
+            // Set Jakarta class converter
+            if (getJakartaConverter() != null) {
+                ClassFileTransformer transformer = null;
+                try {
+                    EESpecProfile profile = EESpecProfile.valueOf(getJakartaConverter());
+                    // FIXME: transformer = new ClassConverter(profile); after 0.2
+                    transformer = ClassConverter.class.getConstructor(EESpecProfile.class).newInstance(profile);
+                } catch (InvocationTargetException | NoSuchMethodException | IllegalArgumentException ignored) {
+                    // Use default value with no argument constructor
+                    transformer = new ClassConverter();
+                }
+                classLoader.addTransformer(transformer);
+            }
 
             // Configure our repositories
             setClassPath();

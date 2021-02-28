@@ -126,9 +126,9 @@ public final class Response {
     private long commitTimeNanos = -1;
 
     /**
-     * Holds request error exception.
+     * Holds response writing error exception.
      */
-    Exception errorException = null;
+    private Exception errorException = null;
 
     /**
      * With the introduction of async processing and the possibility of
@@ -285,7 +285,8 @@ public final class Response {
     // -----------------Error State --------------------
 
     /**
-     * Set the error Exception that occurred during request processing.
+     * Set the error Exception that occurred during the writing of the response
+     * processing.
      *
      * @param ex The exception that occurred
      */
@@ -295,7 +296,7 @@ public final class Response {
 
 
     /**
-     * Get the Exception that occurred during request processing.
+     * Get the Exception that occurred during the writing of the response.
      *
      * @return The exception that occurred
      */
@@ -305,7 +306,7 @@ public final class Response {
 
 
     public boolean isExceptionPresent() {
-        return ( errorException != null );
+        return errorException != null;
     }
 
 
@@ -465,8 +466,9 @@ public final class Response {
     public void setLocale(Locale locale) {
 
         if (locale == null) {
-            return;  // throw an exception?
-        }
+            this.locale = null;
+            this.contentLanguage = null;
+            return;        }
 
         // Save the locale for use by getLocale()
         this.locale = locale;
@@ -500,11 +502,13 @@ public final class Response {
             return;
         }
         if (characterEncoding == null) {
+            this.charset = null;
+            this.characterEncoding = null;
             return;
         }
 
-        this.charset = B2CConverter.getCharset(characterEncoding);
         this.characterEncoding = characterEncoding;
+        this.charset = B2CConverter.getCharset(characterEncoding);
     }
 
 

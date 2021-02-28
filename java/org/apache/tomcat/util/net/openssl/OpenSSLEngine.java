@@ -251,7 +251,7 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
         } else {
             ByteBuffer buf = ByteBuffer.allocateDirect(len);
             try {
-                final long addr = memoryAddress(buf);
+                final long addr = Buffer.address(buf);
 
                 src.limit(pos + len);
 
@@ -291,7 +291,7 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
         } else {
             ByteBuffer buf = ByteBuffer.allocateDirect(len);
             try {
-                final long addr = memoryAddress(buf);
+                final long addr = Buffer.address(buf);
 
                 buf.put(src);
 
@@ -330,7 +330,7 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
             final int len = Math.min(MAX_ENCRYPTED_PACKET_LENGTH, limit - pos);
             final ByteBuffer buf = ByteBuffer.allocateDirect(len);
             try {
-                final long addr = memoryAddress(buf);
+                final long addr = Buffer.address(buf);
 
                 final int sslRead = SSL.readFromSSL(ssl, addr, len);
                 if (sslRead > 0) {
@@ -364,7 +364,7 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
         } else {
             final ByteBuffer buf = ByteBuffer.allocateDirect(pending);
             try {
-                final long addr = memoryAddress(buf);
+                final long addr = Buffer.address(buf);
 
                 final int bioRead = SSL.readFromBIO(networkBIO, addr, pending);
                 if (bioRead > 0) {
@@ -567,6 +567,11 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
         }
 
         while (pendingApp > 0) {
+            if (idx == endOffset) {
+                // Destination buffer state changed (no remaining space although
+                // capacity is still available), so break loop with an error
+                throw new IllegalStateException(sm.getString("engine.invalidDestinationBuffersState"));
+            }
             // Write decrypted data to dsts buffers
             while (idx < endOffset) {
                 ByteBuffer dst = dsts[idx];
@@ -957,13 +962,10 @@ public final class OpenSSLEngine extends SSLEngine implements SSLUtil.ProtocolIn
      * TODO: Check last error after every call to an SSL method and respond
      *       appropriately.
      */
-    private void clearLastError() {
-        SSL.getLastErrorNumber();
-    }
-
-
-    private static long memoryAddress(ByteBuffer buf) {
-        return Buffer.address(buf);
+    private static void clearLastError() {
+        while (SSL.getLastErrorNumber() != SSL.SSL_ERROR_NONE) {
+            // Loop until getLastErrorNumber() returns SSL_ERROR_NONE
+        }
     }
 
     private SSLEngineResult.Status getEngineStatus() {

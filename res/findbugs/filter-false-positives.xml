@@ -392,6 +392,12 @@
     <Bug code="Dm" />
   </Match>
   <Match>
+  <!-- The stream is closed in the thread  -->
+    <Class name="org.apache.catalina.servlets.CGIServlet$CGIRunner" />
+    <Method name="run" />
+    <Bug pattern="OS_OPEN_STREAM" />
+  </Match>
+  <Match>
   <!-- The header value is safe  -->
     <Class name="org.apache.catalina.servlets.DefaultServlet" />
     <Method name="doDirectoryRedirect" />
@@ -524,6 +530,12 @@
       <Method name="deployWAR" />
     </Or>
     <Bug code="NP" />
+  </Match>
+  <Match>
+    <!-- legacyAppBase is tested a few lines earlier -->
+    <Class name="org.apache.catalina.startup.HostConfig" />
+    <Method name="migrateLegacyApps" />
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
   </Match>
   <Match>
     <!-- Domain resolution not an issue here -->
@@ -1007,9 +1019,9 @@
   <Match>
     <!-- Simpler to catch Exception than to create dummy implementations of the
          necessary exception hierarchy -->
-    <Class name="org.apache.naming.factory.SendMailFactory$1" />
-    <Method name="run" />
-    <Bug code="DE" />
+    <Class name="org.apache.naming.factory.SendMailFactory" />
+    <Method name="lambda$0" />
+    <Bug pattern="DE_MIGHT_IGNORE" />
   </Match>
   <Match>
     <!-- Simpler to catch Exception than to create dummy implementations of the

@@ -284,17 +284,16 @@ public final class HTMLManagerServlet extends ManagerServlet {
                     break;
                 }
 
-                if (isServiced(name)) {
-                    message = smClient.getString("managerServlet.inService", name);
-                } else {
-                    addServiced(name);
+                if (tryAddServiced(name)) {
                     try {
                         warPart.write(file.getAbsolutePath());
-                        // Perform new deployment
-                        check(name);
                     } finally {
                         removeServiced(name);
                     }
+                    // Perform new deployment
+                    check(name);
+                } else {
+                    message = smClient.getString("managerServlet.inService", name);
                 }
                 break;
             }
@@ -798,7 +797,7 @@ public final class HTMLManagerServlet extends ManagerServlet {
      */
     @Override
     public String getServletInfo() {
-        return "HTMLManagerServlet, Copyright (c) 1999-2020, The Apache Software Foundation";
+        return "HTMLManagerServlet, Copyright (c) 1999-2021, The Apache Software Foundation";
     }
 
     /**
@@ -957,7 +956,7 @@ public final class HTMLManagerServlet extends ManagerServlet {
                     orderBy = "DESC";
                 }
                 try {
-                    Collections.sort(sessions, comparator);
+                    sessions.sort(comparator);
                 } catch (IllegalStateException ise) {
                     // at least 1 of the sessions is invalidated
                     req.setAttribute(APPLICATION_ERROR, "Can't sort session list: one session is invalidated");

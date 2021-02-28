@@ -150,7 +150,7 @@ public class DefaultServlet extends HttpServlet {
     /**
      * Full range marker.
      */
-    protected static final Ranges FULL = new Ranges(null, new ArrayList<Ranges.Entry>());
+    protected static final Ranges FULL = new Ranges(null, new ArrayList<>());
 
     private static final ContentRange IGNORE = new ContentRange(null, 0, 0, 0);
 
@@ -2070,7 +2070,7 @@ public class DefaultServlet extends HttpServlet {
 
         // First check that the resulting path is under the provided base
         try {
-            if (!candidate.getCanonicalPath().startsWith(base.getCanonicalPath())) {
+            if (!candidate.getCanonicalFile().toPath().startsWith(base.getCanonicalFile().toPath())) {
                 return null;
             }
         } catch (IOException ioe) {

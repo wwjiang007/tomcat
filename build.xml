@@ -94,6 +94,8 @@
   <property name="tomcat.jdbc.dir"       value="${basedir}/modules/jdbc-pool"/>
   <!-- build output directory for jdbc-pool -->
   <property name="tomcat.pool"           value="${tomcat.output}/jdbc-pool"/>
+  <!-- build output directory for generated reflectionless code -->
+  <property name="tomcat.xreflect"       value="${tomcat.output}/xreflect"/>
 
   <!-- Jakarta EE 9 specs requires Java 8+ -->
   <property name="compile.source" value="8"/>
@@ -222,15 +224,23 @@
              property="java9.test.option.3"
              value="--add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED"/>
   <property name="java9.test.option.3" value="-Dtest.3=3"/>
+  <available classname="java.lang.reflect.InaccessibleObjectException"
+             property="java9.test.option.4"
+             value="--add-opens=java.base/java.util=ALL-UNNAMED"/>
+  <property name="java9.test.option.4" value="-Dtest.4=4"/>
+  <available classname="java.lang.reflect.InaccessibleObjectException"
+             property="java9.test.option.5"
+             value="--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"/>
+  <property name="java9.test.option.5" value="-Dtest.5=5"/>
 
   <!-- Classpaths -->
   <path id="compile.classpath">
     <pathelement location="${bnd.jar}"/>
     <pathelement location="${osgi-annotations.jar}"/>
     <pathelement location="${jdt.jar}"/>
-    <pathelement location="${saaj-api.jar}"/>
     <pathelement location="${jaxrpc-lib.jar}"/>
     <pathelement location="${wsdl4j-lib.jar}"/>
+    <pathelement location="${migration-lib.jar}"/>
   </path>
 
   <path id="tomcat.classpath">
@@ -799,6 +809,7 @@
     <mkdir dir="${tomcat.build}/logs"/>
     <mkdir dir="${tomcat.build}/temp"/>
     <mkdir dir="${tomcat.build}/webapps"/>
+    <mkdir dir="${tomcat.build}/webapps-javaee"/>
 
     <!-- Property that determines if manifests need updating -->
     <uptodate property="manifests.uptodate"
@@ -1452,6 +1463,17 @@
     </delete>
     <copy file="${jdt.jar}" todir="${tomcat.build}/lib"/>
 
+    <!-- Delete all other versions of Tomcat Migration Tool for Jakarta EE and copy the current one -->
+    <local name="migration.jar.filename" />
+    <basename property="migration.jar.filename" file="${migration-lib.jar}"/>
+    <delete verbose="true">
+      <fileset dir="${tomcat.build}/lib">
+        <include name="jakartaee-migration-*.jar"/>
+        <exclude name="${migration-lib.jar.filename}"/>
+      </fileset>
+    </delete>
+    <copy file="${migration-lib.jar}" todir="${tomcat.build}/lib"/>
+
     <!-- Add sources for examples -->
     <antcall target="examples-sources" />
   </target>
@@ -1739,7 +1761,7 @@
            license="${tomcat.manifests}/servlet-api.jar.license"/>
 
     <!-- Leave generated code in an easy place for review -->
-    <copy todir="${java.io.tmpdir}"
+    <copy todir="${tomcat.xreflect}"
           file="${xreflect.directory}/sources/org/apache/tomcat/util/XReflectionIntrospectionUtils.java"
           overwrite="true"/>
     <!-- Delete our temporary compilation directory -->
@@ -1942,6 +1964,8 @@
         <jvmarg value="${java9.test.option.1}"/>
         <jvmarg value="${java9.test.option.2}"/>
         <jvmarg value="${java9.test.option.3}"/>
+        <jvmarg value="${java9.test.option.4}"/>
+        <jvmarg value="${java9.test.option.5}"/>
 
         <classpath refid="tomcat.test.run.classpath" />
 
@@ -2562,20 +2586,16 @@ skip.installer property in build.properties" />
   <target name="-installer-sign-uninstaller"
       unless="skip.installer" depends="-installer-create-uninstaller"
       if="${do.codesigning}">
-    <taskdef name="signcode"
-        classname="org.apache.tomcat.buildutil.SignCode"
-        classpath="${tomcat.classes}" />
-    <signcode userName="${codesigning.user}" password="${codesigning.pwd}"
-        partnerCode="${codesigning.partnercode}"
-        keyStore="${codesigning.keyStore}"
-        keyStorePassword="${codesigning.keyStorePassword}"
-        applicationName="Apache Tomcat ${version.major.minor} Uninstaller"
-        applicationversion="${version}"
-        signingService="${codesigning.service}">
-      <fileset dir="${tomcat.dist}">
-        <filename name="Uninstall.exe"/>
-      </fileset>
-    </signcode>
+    <exec executable="${codesigning.exec}" failonerror="true">
+      <arg value="sign"/>
+      <arg value="/sha1"/>
+      <arg value="${codesigning.certificate.thumbprint}"/>
+      <arg value="/fd"/>
+      <arg value="sha512"/>
+      <arg value="/tr"/>
+      <arg value="http://timestamp.digicert.com"/>
+      <arg value="${tomcat.dist}/Uninstall.exe"/>
+    </exec>
   </target>
 
   <target name="-installer" unless="skip.installer"
@@ -2598,20 +2618,16 @@ skip.installer property in build.properties" />
   <target name="installer-sign"
       description="Builds and optionally signs the Windows installer"
       depends="-installer" if="${do.codesigning}" >
-    <taskdef name="signcode"
-        classname="org.apache.tomcat.buildutil.SignCode"
-        classpath="${tomcat.classes}" />
-    <signcode userName="${codesigning.user}" password="${codesigning.pwd}"
-              partnerCode="${codesigning.partnercode}"
-              keyStore="${codesigning.keyStore}"
-              keyStorePassword="${codesigning.keyStorePassword}"
-              applicationName="Apache Tomcat ${version.major.minor}"
-              applicationversion="${version}"
-              signingService="${codesigning.service}">
-      <fileset dir="${tomcat.release}">
-        <filename name="v${version}/bin/${final.name}.exe"/>
-      </fileset>
-    </signcode>
+    <exec executable="${codesigning.exec}" failonerror="true">
+      <arg value="sign"/>
+      <arg value="/sha1"/>
+      <arg value="${codesigning.certificate.thumbprint}"/>
+      <arg value="/fd"/>
+      <arg value="sha512"/>
+      <arg value="/tr"/>
+      <arg value="http://timestamp.digicert.com"/>
+      <arg value="${tomcat.release}/v${version}/bin/${final.name}.exe"/>
+    </exec>
     <!-- .exe has changed so need to redo checksums and OpenPGP signature -->
     <delete file="${tomcat.release}/v${version}/bin/${final.name}.exe.asc" />
     <delete file="${tomcat.release}/v${version}/bin/${final.name}.exe.sha512" />
@@ -3103,17 +3119,6 @@ skip.installer property in build.properties" />
       <param name="checksum.value" value="${jdt.checksum.value}"/>
     </antcall>
 
-    <!-- Download SAAJ API -->
-    <antcall target="downloadfile">
-      <param name="sourcefile" value="${saaj-api.loc}"/>
-      <param name="destfile" value="${saaj-api.jar}"/>
-      <param name="destdir" value="${saaj-api.home}"/>
-      <param name="checksum.enabled" value="${saaj-api.checksum.enabled}"/>
-      <param name="checksum.algorithm" value="${saaj-api.checksum.algorithm}"/>
-      <param name="checksum.value" value="${saaj-api.checksum.value}"/>
-    </antcall>
-
-
     <!-- Download WS API -->
     <antcall target="downloadfile">
       <param name="sourcefile" value="${jaxrpc-lib.loc}"/>
@@ -3130,6 +3135,16 @@ skip.installer property in build.properties" />
       <param name="checksum.enabled" value="${wsdl4j-lib.checksum.enabled}"/>
       <param name="checksum.algorithm" value="${wsdl4j-lib.checksum.algorithm}"/>
       <param name="checksum.value" value="${wsdl4j-lib.checksum.value}"/>
+    </antcall>
+
+    <!-- Tomcat Migration Tool for Jakarta EE -->
+    <antcall target="downloadfile">
+      <param name="sourcefile" value="${migration-lib.loc}"/>
+      <param name="destfile" value="${migration-lib.jar}"/>
+      <param name="destdir" value="${migration-lib.home}"/>
+      <param name="checksum.enabled" value="${migration-lib.checksum.enabled}"/>
+      <param name="checksum.algorithm" value="${migration-lib.checksum.algorithm}"/>
+      <param name="checksum.value" value="${migration-lib.checksum.value}"/>
     </antcall>
 
   </target>
