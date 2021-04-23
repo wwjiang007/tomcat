@@ -148,7 +148,6 @@ public class CoyoteAdapter implements Adapter {
                 // trigger a close
                 success = false;
                 Throwable t = (Throwable)req.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
-                req.getAttributes().remove(RequestDispatcher.ERROR_EXCEPTION);
                 Context context = request.getContext();
                 ClassLoader oldCL = null;
                 try {
@@ -159,11 +158,10 @@ public class CoyoteAdapter implements Adapter {
                     if (res.getWriteListener() != null) {
                         res.getWriteListener().onError(t);
                     }
+                    res.action(ActionCode.CLOSE_NOW, t);
+                    asyncConImpl.setErrorState(t, true);
                 } finally {
                     context.unbind(false, oldCL);
-                }
-                if (t != null) {
-                    asyncConImpl.setErrorState(t, true);
                 }
             }
 
@@ -192,8 +190,8 @@ public class CoyoteAdapter implements Adapter {
                         // Therefore no need to set success=false as that would trigger a
                         // second call to AbstractProcessor.setErrorState()
                         // https://bz.apache.org/bugzilla/show_bug.cgi?id=65001
-                        res.action(ActionCode.CLOSE_NOW, t);
                         writeListener.onError(t);
+                        res.action(ActionCode.CLOSE_NOW, t);
                         asyncConImpl.setErrorState(t, true);
                     } finally {
                         context.unbind(false, oldCL);
@@ -209,7 +207,7 @@ public class CoyoteAdapter implements Adapter {
                         // onAllDataRead() event. Therefore, make sure
                         // onDataAvailable() is not called in this case.
                         if (!request.isFinished()) {
-                            readListener.onDataAvailable();
+                            req.onDataAvailable();
                         }
                         if (request.isFinished() && req.sendAllDataReadEvent()) {
                             readListener.onAllDataRead();
@@ -225,8 +223,8 @@ public class CoyoteAdapter implements Adapter {
                         // Therefore no need to set success=false as that would trigger a
                         // second call to AbstractProcessor.setErrorState()
                         // https://bz.apache.org/bugzilla/show_bug.cgi?id=65001
-                        res.action(ActionCode.CLOSE_NOW, t);
                         readListener.onError(t);
+                        res.action(ActionCode.CLOSE_NOW, t);
                         asyncConImpl.setErrorState(t, true);
                     } finally {
                         context.unbind(false, oldCL);

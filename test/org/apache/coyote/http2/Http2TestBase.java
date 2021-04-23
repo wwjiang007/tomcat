@@ -1031,7 +1031,7 @@ public abstract class Http2TestBase extends TomcatBaseTest {
 
 
         @Override
-        public void endRequestBodyFrame(int streamId) throws Http2Exception {
+        public void endRequestBodyFrame(int streamId, int dataLength) throws Http2Exception {
             if (bodyBuffer != null) {
                 if (bodyBuffer.limit() > 0) {
                     trace.append(lastStreamId + "-Body-");
@@ -1172,10 +1172,10 @@ public abstract class Http2TestBase extends TomcatBaseTest {
 
 
         @Override
-        public void swallowed(int streamId, FrameType frameType, int flags, int size) {
+        public void onSwallowedUnknownFrame(int streamId, int frameTypeId, int flags, int size) {
             trace.append(streamId);
             trace.append(",");
-            trace.append(frameType);
+            trace.append(frameTypeId);
             trace.append(",");
             trace.append(flags);
             trace.append(",");
@@ -1185,11 +1185,10 @@ public abstract class Http2TestBase extends TomcatBaseTest {
 
 
         @Override
-        public void swallowedPadding(int streamId, int paddingLength) {
-            trace.append(streamId);
-            trace.append("-SwallowedPadding-[");
-            trace.append(paddingLength);
-            trace.append("]\n");
+        public void onSwallowedDataFramePayload(int streamId, int swallowedDataBytesCount) {
+            // NO-OP
+            // Many tests swallow request bodies which triggers this
+            // notification. It is added to the trace to reduce noise.
         }
 
 

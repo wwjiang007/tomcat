@@ -40,6 +40,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jakarta.el.MethodExpression;
 import jakarta.el.ValueExpression;
@@ -52,6 +54,7 @@ import org.apache.el.util.JreCompat;
 import org.apache.jasper.Constants;
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspCompilationContext;
+import org.apache.jasper.TrimSpacesOption;
 import org.apache.jasper.compiler.Node.NamedAttribute;
 import org.apache.jasper.runtime.JspRuntimeLibrary;
 import org.xml.sax.Attributes;
@@ -80,6 +83,10 @@ import org.xml.sax.Attributes;
 class Generator {
 
     private static final Class<?>[] OBJECT_CLASS = { Object.class };
+
+    private static final Pattern PRE_TAG_PATTERN = Pattern.compile("(?s).*(<pre>|</pre>).*");
+
+    private static final Pattern BLANK_LINE_PATTERN = Pattern.compile("(\\s*(\\n|\\r)+\\s*)");
 
     private final ServletWriter out;
 
@@ -122,21 +129,19 @@ class Generator {
      */
     static String quote(String s) {
 
-        if (s == null)
+        if (s == null) {
             return "null";
+        }
 
         return '"' + escape(s) + '"';
     }
 
     /**
-     * @param s
-     *            the input string
+     * @param s     the input string - must not be {@code null}
+     *
      * @return escaped string, per Java rule
      */
     static String escape(String s) {
-
-        if (s == null)
-            return "";
 
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
@@ -241,13 +246,11 @@ class Generator {
             @Override
             public void visit(Node.CustomTag n) throws JasperException {
                 if (n.useTagPlugin()) {
-                    if (n.getAtSTag() != null) {
-                        n.getAtSTag().visit(this);
-                    }
+                    // If a custom tag is configured to use a plug-in
+                    // getAtSTag() and  getAtETag() will always be non-null
+                    n.getAtSTag().visit(this);
                     visitBody(n);
-                    if (n.getAtETag() != null) {
-                        n.getAtETag().visit(this);
-                    }
+                    n.getAtETag().visit(this);
                 } else {
                     visitBody(n);
                 }
@@ -533,8 +536,8 @@ class Generator {
 
         if (isPoolingEnabled) {
             for (int i = 0; i < tagHandlerPoolNames.size(); i++) {
-                                out.printin(tagHandlerPoolNames.elementAt(i));
-                                out.println(".release();");
+                out.printin(tagHandlerPoolNames.elementAt(i));
+                out.println(".release();");
             }
         }
 
@@ -545,13 +548,12 @@ class Generator {
 
     /**
      * Generate preamble package name (shared by servlet and tag handler
-     * preamble generation)
+     * preamble generation). Package is always non-null as neither Servlets nor
+     * tags can use a default package.
      */
     private void genPreamblePackage(String packageName) {
-        if (packageName != null && !packageName.isEmpty()) {
-            out.printil("package " + packageName + ";");
-            out.println();
-        }
+        out.printil("package " + packageName + ";");
+        out.println();
     }
 
     /**
@@ -605,9 +607,6 @@ class Generator {
         Set<String> packages = new HashSet<>();
         Set<String> classes = new HashSet<>();
         for (String importName : imports) {
-            if (importName == null) {
-                continue;
-            }
             String trimmed = importName.trim();
             if (trimmed.endsWith(".*")) {
                 packages.add(trimmed.substring(0, trimmed.length() - 2));
@@ -621,18 +620,16 @@ class Generator {
         out.println();
         out.printil("static {");
         out.pushIndent();
-        if (packages.size() == 0) {
-            out.printin("_jspx_imports_packages = null;");
-            out.println();
-        } else {
-            out.printin("_jspx_imports_packages = new java.util.HashSet<>();");
-            out.println();
-            for (String packageName : packages) {
-                out.printin("_jspx_imports_packages.add(\"");
-                out.print(packageName);
-                out.println("\");");
-            }
+        // Packages is never empty because o.a.j.Constants.STANDARD_IMPORTS
+        // contains 3 packages and is always added to the imports.
+        out.printin("_jspx_imports_packages = new java.util.HashSet<>();");
+        out.println();
+        for (String packageName : packages) {
+            out.printin("_jspx_imports_packages.add(\"");
+            out.print(packageName);
+            out.println("\");");
         }
+        // classes however, may be empty depending on the import declarations
         if (classes.size() == 0) {
             out.printin("_jspx_imports_classes = null;");
             out.println();
@@ -963,9 +960,6 @@ class Generator {
         private String attributeValue(Node.JspAttribute attr, boolean encode,
                 Class<?> expectedType) {
             String v = attr.getValue();
-            if (!attr.isNamedAttribute() && (v == null))
-                return "";
-
             if (attr.isExpression()) {
                 if (encode) {
                     return "org.apache.jasper.runtime.JspRuntimeLibrary.URLEncode(String.valueOf("
@@ -1057,16 +1051,11 @@ class Generator {
         @Override
         public void visit(Node.ELExpression n) throws JasperException {
             n.setBeginJavaLine(out.getJavaLine());
-            if (!pageInfo.isELIgnored() && (n.getEL() != null)) {
-                out.printil("out.write("
-                        + elInterpreter.interpreterCall(ctxt, this.isTagFile,
-                                n.getType() + "{" + n.getText() + "}",
-                                String.class, n.getEL().getMapName()) +
-                        ");");
-            } else {
-                out.printil("out.write("
-                        + quote(n.getType() + "{" + n.getText() + "}") + ");");
-            }
+            out.printil("out.write("
+                    + elInterpreter.interpreterCall(ctxt, this.isTagFile,
+                            n.getType() + "{" + n.getText() + "}",
+                            String.class, n.getEL().getMapName()) +
+                    ");");
             n.setEndJavaLine(out.getJavaLine());
         }
 
@@ -1114,24 +1103,21 @@ class Generator {
          * a Named Attribute (&lt;jsp:attribute&gt;), generate the code to evaluate
          * those bodies first.
          * <p>
-         * If parent is null, simply returns.
+         * {@code parent} is assumed to be non-null
          */
         private void prepareParams(Node parent) throws JasperException {
-            if (parent == null)
-                return;
-
             Node.Nodes subelements = parent.getBody();
             if (subelements != null) {
                 for (int i = 0; i < subelements.size(); i++) {
                     Node n = subelements.getNode(i);
-                    if (n instanceof Node.ParamAction) {
-                        Node.Nodes paramSubElements = n.getBody();
-                        for (int j = 0; (paramSubElements != null)
-                                && (j < paramSubElements.size()); j++) {
-                            Node m = paramSubElements.getNode(j);
-                            if (m instanceof Node.NamedAttribute) {
-                                generateNamedAttributeValue((Node.NamedAttribute) m);
-                            }
+                    // Validation during parsing ensures n is an instance of
+                    // Node.ParamAction
+                    Node.Nodes paramSubElements = n.getBody();
+                    for (int j = 0; (paramSubElements != null)
+                            && (j < paramSubElements.size()); j++) {
+                        Node m = paramSubElements.getNode(j);
+                        if (m instanceof Node.NamedAttribute) {
+                            generateNamedAttributeValue((Node.NamedAttribute) m);
                         }
                     }
                 }
@@ -1360,8 +1346,10 @@ class Generator {
                     // and (for Java 9+) in an exported module
                     int modifiers = bean.getModifiers();
                     JreCompat jreCompat = JreCompat.getInstance();
+                    // No need to test for being an interface here as the
+                    // getConstructor() call above will have already failed for
+                    // any interfaces.
                     if (!Modifier.isPublic(modifiers) ||
-                            Modifier.isInterface(modifiers) ||
                             Modifier.isAbstract(modifiers) ||
                             !jreCompat.canAccess(null, constructor) ) {
                         throw new Exception(Localizer.getMessage("jsp.error.invalid.bean",
@@ -1867,24 +1855,28 @@ class Generator {
             // Add the named objects to the list of 'introduced' names to enable
             // a later test as per JSP.5.3
             VariableInfo[] infos = n.getVariableInfos();
-            if (infos != null && infos.length > 0) {
+            // The Validator always calls setTagData() which ensures infos is
+            // non-null
+            if (infos.length > 0) {
                 for (VariableInfo info : infos) {
-                    if (info != null && info.getVarName() != null)
-                        pageInfo.getVarInfoNames().add(info.getVarName());
+                    // A null variable name will trigger multiple compilation
+                    // failures so assume non-null here
+                    pageInfo.getVarInfoNames().add(info.getVarName());
                 }
             }
             TagVariableInfo[] tagInfos = n.getTagVariableInfos();
-            if (tagInfos != null && tagInfos.length > 0) {
+            // The way Tomcat constructs the TagInfo, getTagVariableInfos()
+            // will never return null.
+            if (tagInfos.length > 0) {
                 for (TagVariableInfo tagInfo : tagInfos) {
-                    if (tagInfo != null) {
-                        String name = tagInfo.getNameGiven();
-                        if (name == null) {
-                            String nameFromAttribute =
-                                    tagInfo.getNameFromAttribute();
-                            name = n.getAttributeValue(nameFromAttribute);
-                        }
-                        pageInfo.getVarInfoNames().add(name);
+                    // tagInfo is always non-null
+                    String name = tagInfo.getNameGiven();
+                    if (name == null) {
+                        String nameFromAttribute =
+                                tagInfo.getNameFromAttribute();
+                        name = n.getAttributeValue(nameFromAttribute);
                     }
+                    pageInfo.getVarInfoNames().add(name);
                 }
             }
 
@@ -1927,9 +1919,7 @@ class Generator {
 
             if (ci.isScriptless() && !ci.hasScriptingVars()) {
                 // Generate end of method
-                if (methodNesting > 0) {
-                    out.printil("return false;");
-                }
+                out.printil("return false;");
                 out.popIndent();
                 out.printil("}");
                 out.popIndent();
@@ -2014,8 +2004,9 @@ class Generator {
             // Compute attribute value string for XML-style and named
             // attributes
             Hashtable<String,String> map = new Hashtable<>();
+            // Validator ensures this is non-null
             Node.JspAttribute[] attrs = n.getJspAttributes();
-            for (int i = 0; attrs != null && i < attrs.length; i++) {
+            for (int i = 0; i < attrs.length; i++) {
                 String value = null;
                 String nvp = null;
                 if (attrs[i].isNamedAttribute()) {
@@ -2025,14 +2016,16 @@ class Generator {
                     if (omitAttr == null) {
                         omit = "false";
                     } else {
+                        // String literals returned by attributeValue will be
+                        // quoted and escaped.
                         omit = attributeValue(omitAttr, false, boolean.class);
-                        if ("true".equals(omit)) {
+                        if ("\"true\"".equals(omit)) {
                             continue;
                         }
                     }
                     value = generateNamedAttributeValue(
                             attrs[i].getNamedAttributeNode());
-                    if ("false".equals(omit)) {
+                    if ("\"false\"".equals(omit)) {
                         nvp = " + \" " + attrs[i].getName() + "=\\\"\" + " +
                                 value + " + \"\\\"\"";
                     } else {
@@ -2097,6 +2090,21 @@ class Generator {
         public void visit(Node.TemplateText n) throws JasperException {
 
             String text = n.getText();
+            // If the extended option is being used attempt to minimize the
+            // frequency of regex operations.
+            if (ctxt.getOptions().getTrimSpaces().equals(TrimSpacesOption.EXTENDED) &&
+                    text.contains("\n")) {
+                // Ensure there are no <pre> or </pre> tags embedded in this
+                // text - if there are, we want to NOT modify the whitespace.
+                Matcher preMatcher = PRE_TAG_PATTERN.matcher(text);
+                if (!preMatcher.matches()) {
+                    Matcher matcher = BLANK_LINE_PATTERN.matcher(text);
+                    String revisedText = matcher.replaceAll("\n");
+                    // Leading and trailing whitespace can be trimmed so remove
+                    // it here as the regex won't remove it.
+                    text = revisedText.trim();
+                }
+            }
 
             int textSize = text.length();
             if (textSize == 0) {
@@ -2201,9 +2209,6 @@ class Generator {
                     }
                     // add a Smap for this line
                     n.addSmap(srcLine);
-                    break;
-                case '\t': // Not sure we need this
-                    sb.append('\\').append('t');
                     break;
                 default:
                     sb.append(ch);
@@ -2329,7 +2334,9 @@ class Generator {
         public void visit(Node.AttributeGenerator n) throws JasperException {
             Node.CustomTag tag = n.getTag();
             Node.JspAttribute[] attrs = tag.getJspAttributes();
-            for (int i = 0; attrs != null && i < attrs.length; i++) {
+            // The TagPluginManager only creates AttributeGenerator nodes for
+            // attributes that are present.
+            for (int i = 0; i < attrs.length; i++) {
                 if (attrs[i].getName().equals(n.getName())) {
                     out.print(evaluateAttribute(getTagHandlerInfo(tag),
                             attrs[i], tag, null));
@@ -2356,13 +2363,9 @@ class Generator {
         }
 
         private void generateTagPlugin(Node.CustomTag n) throws JasperException {
-            if (n.getAtSTag() != null) {
-                n.getAtSTag().visit(this);
-            }
+            n.getAtSTag().visit(this);
             visitBody(n);
-            if (n.getAtETag() != null) {
-                n.getAtETag().visit(this);
-            }
+            n.getAtETag().visit(this);
         }
 
         private void generateCustomStart(Node.CustomTag n,
@@ -2398,7 +2401,7 @@ class Generator {
                 out.print(tagHandlerVar);
                 out.println("_reused = false;");
             } else {
-                writeNewInstance(tagHandlerVar, tagHandlerClassName);
+                writeNewInstance(tagHandlerVar, tagHandlerClass);
             }
 
             // Wrap use of tag in try/finally to ensure clean-up takes place
@@ -2475,7 +2478,8 @@ class Generator {
             n.setEndJavaLine(out.getJavaLine());
         }
 
-        private void writeNewInstance(String tagHandlerVar, String tagHandlerClassName) {
+        private void writeNewInstance(String tagHandlerVar, Class<?> tagHandlerClass) {
+            String tagHandlerClassName = tagHandlerClass.getCanonicalName();
             out.printin(tagHandlerClassName);
             out.print(" ");
             out.print(tagHandlerVar);
@@ -2485,7 +2489,8 @@ class Generator {
                 out.print(tagHandlerClassName);
                 out.print(")");
                 out.print("_jsp_getInstanceManager().newInstance(\"");
-                out.print(tagHandlerClassName);
+                // Need the binary name here, not the canonical name
+                out.print(tagHandlerClass.getName());
                 out.println("\", this.getClass().getClassLoader());");
             } else {
                 out.print("new ");
@@ -2642,8 +2647,7 @@ class Generator {
             // Declare AT_END scripting variables
             declareScriptingVars(n, VariableInfo.AT_END);
 
-            String tagHandlerClassName = tagHandlerClass.getCanonicalName();
-            writeNewInstance(tagHandlerVar, tagHandlerClassName);
+            writeNewInstance(tagHandlerVar, tagHandlerClass);
 
             out.printil("try {");
             out.pushIndent();
@@ -2710,33 +2714,31 @@ class Generator {
                 return;
             }
 
+            // Note: ScriptingVariabler$ScriptingVariableVisitor will already
+            // have skipped any variables where declare is set to false.
             List<Object> vec = n.getScriptingVars(scope);
             if (vec != null) {
                 for (Object elem : vec) {
                     if (elem instanceof VariableInfo) {
                         VariableInfo varInfo = (VariableInfo) elem;
-                        if (varInfo.getDeclare()) {
-                            out.printin(varInfo.getClassName());
-                            out.print(" ");
-                            out.print(varInfo.getVarName());
-                            out.println(" = null;");
-                        }
+                        out.printin(varInfo.getClassName());
+                        out.print(" ");
+                        out.print(varInfo.getVarName());
+                        out.println(" = null;");
                     } else {
                         TagVariableInfo tagVarInfo = (TagVariableInfo) elem;
-                        if (tagVarInfo.getDeclare()) {
-                            String varName = tagVarInfo.getNameGiven();
-                            if (varName == null) {
-                                varName = n.getTagData().getAttributeString(
-                                        tagVarInfo.getNameFromAttribute());
-                            } else if (tagVarInfo.getNameFromAttribute() != null) {
-                                // alias
-                                continue;
-                            }
-                            out.printin(tagVarInfo.getClassName());
-                            out.print(" ");
-                            out.print(varName);
-                            out.println(" = null;");
+                        String varName = tagVarInfo.getNameGiven();
+                        if (varName == null) {
+                            varName = n.getTagData().getAttributeString(
+                                    tagVarInfo.getNameFromAttribute());
+                        } else if (tagVarInfo.getNameFromAttribute() != null) {
+                            // alias
+                            continue;
                         }
+                        out.printin(tagVarInfo.getClassName());
+                        out.print(" ");
+                        out.print(varName);
+                        out.println(" = null;");
                     }
                 }
             }
@@ -2800,10 +2802,12 @@ class Generator {
                     if (varName == null) {
                         varName = n.getTagData().getAttributeString(
                                 tagVarInfo.getNameFromAttribute());
-                    } else if (tagVarInfo.getNameFromAttribute() != null) {
-                        // alias
-                        continue;
                     }
+                    // Alias is not possible here.
+                    // Alias can only be configured for tag files. As SimpleTag
+                    // implementations, isFragment will always be true above
+                    // hence execution never reaches this point.
+
                     String tmpVarName = "_jspx_" + varName + "_"
                             + n.getCustomNestingLevel();
                     out.printin(tmpVarName);
@@ -2870,10 +2874,12 @@ class Generator {
                     if (varName == null) {
                         varName = n.getTagData().getAttributeString(
                                 tagVarInfo.getNameFromAttribute());
-                    } else if (tagVarInfo.getNameFromAttribute() != null) {
-                        // alias
-                        continue;
                     }
+                    // Alias is not possible here.
+                    // Alias can only be configured for tag files. As SimpleTag
+                    // implementations, isFragment will always be true above
+                    // hence execution never reaches this point.
+
                     String tmpVarName = "_jspx_" + varName + "_"
                             + n.getCustomNestingLevel();
                     out.printin(varName);

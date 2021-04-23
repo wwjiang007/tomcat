@@ -103,7 +103,193 @@
   They eventually become mixed with the numbered issues (i.e., numbered
   issues do not "pop up" wrt. others).
 -->
-<section name="Tomcat 10.0.3 (markt)" rtext="in development">
+<section name="Tomcat 10.0.6 (markt)" rtext="in development">
+  <subsection name="Catalina">
+    <changelog>
+      <scode>
+        Expand coverage of unit tests for JNDIRealm using the UnboundID LDAP SDK
+        for Java. (markt)
+      </scode>
+      <fix>
+        <bug>65224</bug>: Ensure the correct escaping of attribute values and
+        search filters in the JNDIRealm. (markt)
+      </fix>
+      <fix>
+        <bug>65235</bug>: Add missing attributes to the MBean descriptor file
+        for the <code>RemoteIpValve</code>. (markt)
+      </fix>
+      <fix>
+        <bug>65244</bug>: HandlesTypes should include classes that use
+        the specified annotation types on fields or methods. (remm)
+      </fix>
+      <fix>
+        <bug>65251</bug>: Correct a regression introduced in 10.0.3 that meant
+        that the auto-deployment process may attempt a second, concurrent
+        deployment of a web application that is being deployed by the Manager
+        resulting in one of the deployments failing and errors being reported.
+        (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Jasper">
+    <changelog>
+      <scode>
+        Review code used to generate Java source from JSPs and tags and remove
+        code found to be unnecessary. (markt)
+      </scode>
+      <update>
+        <code>&lt;servlet&gt;</code> entries in web.xml that include a
+        <code>&lt;jsp-file&gt;</code> element and a negative
+        <code>&lt;load-no-startup&gt;</code> element that is not the default
+        value of <code>-1</code> will no longer be loaded at start-up. This
+        makes it possible to define a <code>&lt;jsp-file&gt;</code> that will
+        not be loaded at start-up. (markt)
+      </update>
+      <fix>
+        Allow the JSP configuration option
+        <code>useInstanceManagerForTags</code> to be used with Tags that are
+        implemented as inner classes. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Web applications">
+    <changelog>
+      <fix>
+        <bug>65235</bug>: Correct name of <code>changeLocalName</code> in the
+        documentation for the <code>RemoteIpValve</code>. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Other">
+    <changelog>
+      <fix>
+        Create OSGi <code>Require-Capability</code> sections in manifests for
+        Jakarta API JARs manually rather than via the
+        <code>aQute.bnd.annotation.spi.ServiceConsumer</code> annotation as this
+        triggers TCK failures for downstream consumers of the API JARs. (markt)
+      </fix>
+      <update>
+        Update the packaged version of the Tomcat Native Library to 1.2.28.
+        (markt)
+      </update>
+      <update>
+        Update the OWB module to Apache OpenWebBeans 2.0.22. (remm)
+      </update>
+      <update>
+        Update the CXF module to Apache CXF 3.4.3. (remm)
+      </update>
+      <fix>
+        <bug>65218</bug>: Update the version number shown on the left-hand
+        banner of the Tomcat installer for Windows to Apache Tomcat 10. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
+<section name="Tomcat 10.0.5 (markt)" rtext="2021-04-06">
+  <subsection name="Catalina">
+    <changelog>
+      <fix>
+        Avoid NPE when a JNDI reference cannot be resolved in favor of a
+        NamingException. (remm)
+      </fix>
+      <fix>
+        Avoid using reflection for setting properties on the webapp
+        classloader. Based on a patch submitted by Romain Manni-Bucau. (remm)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Coyote">
+    <changelog>
+      <fix>
+        Improve consistency of OpenSSL error stack handling in the TLS engine,
+        and log all errors found as debug. (remm)
+      </fix>
+      <fix>
+        Ensure that HTTP/2 streams are only recycled once as multiple attempts
+        to recycle an HTTP/2 stream may result in
+        <code>NullPointerException</code>s. (markt)
+      </fix>
+      <scode>
+        Simplify the closing on an HTTP/2 stream when an error condition is
+        present. (markt)
+      </scode>
+      <fix>
+        <bug>64771</bug>: Prevent concurrent calls to
+        <code>ServletInputStream.isReady()</code> corrupting the input buffer.
+        (markt)
+      </fix>
+      <fix>
+        <bug>65179</bug>: Ensure that the connection level flow control window
+        from the client to the server is updated when handling DATA frames
+        received for completed streams else the flow control window  may become
+        exhausted. (markt)
+      </fix>
+      <fix>
+        <bug>65203</bug>: Fix a regression introduced in 10.0.4 that meant that
+        an error during an asynchronous read broke all future asynchronous reads
+        associated with the same request instance. (markt)
+      </fix>
+      <fix>
+        Disable keep-alive when inconsistent content delimitation is present in
+        a request. (remm)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Jasper">
+    <changelog>
+      <fix>
+        Include the new <code>org.apache.jasper.optimizations</code> package in
+        the list of OSGi exported packages for the Jasper embedded JAR. Patch
+        provided by Sokratis Zappis. (markt)
+      </fix>
+      <add>
+        Add a new option for the <code>trimSpaces</code> configuration.
+        <code>extended</code> will attempt to remove leading and trailing
+        whitespace from template text and collapse sequences of whitespace and
+        newlines within template text into a single new line. Based on a pull
+        request by kamnani. (markt)
+      </add>
+    </changelog>
+  </subsection>
+  <subsection name="Other">
+    <changelog>
+      <add>
+        Implement the first phase of reproducible builds. Sequential builds on
+        the same machine now produce identical output provided that the Ant
+        property <code>ant.tstamp.now.iso</code> is set. The minimum required
+        Ant version is now 1.9.10. (markt)
+      </add>
+      <add>
+        Improvements to Chinese translations. Provided by Ruan Wenjun. (mark)
+      </add>
+      <add>
+        Improvements to French translations. (remm)
+      </add>
+      <add>
+        Improvements to Japanese translations. Provided by kfujino and
+        Shirayuking. (markt)
+      </add>
+      <add>
+        Improvements to Korean translations. (woonsan)
+      </add>
+      <update>
+        Update the packaged version of the Tomcat Native Library to 1.2.27.
+        (markt)
+      </update>
+    </changelog>
+  </subsection>
+</section>
+<section name="Tomcat 10.0.4 (markt)" rtext="2021-03-10">
+  <subsection name="Catalina">
+    <changelog>
+      <fix>
+        Fix rename operation throwing an exception during the webapp migration
+        process. (remm)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
+<section name="Tomcat 10.0.3 (markt)" rtext="not released">
   <subsection name="Catalina">
     <changelog>
       <fix>
@@ -152,6 +338,15 @@
         <code>WriteListener.onWritePossible()</code> and
         <code>ReadListener.onDataAvailable()</code>. (markt)
       </add>
+      <fix>
+        Correct syntax error in output of <code>JsonErrorReportValve</code>.
+        Pull request provided by Viraj Kanwade. (markt)
+      </fix>
+      <scode>
+        Make the <code>StandardContext.postWorkDirectory()</code> protected
+        rather than private to help users wishing to customise the default
+        work directory behaviour. (markt)
+      </scode>
     </changelog>
   </subsection>
   <subsection name="Coyote">
@@ -184,6 +379,15 @@
         Related to bug <bug>65131</bug>, make sure all errors from OpenSSL are
         fully cleared, as there could be more than one error present after
         an operation (confirmed in the OpenSSL API documentation). (remm)
+      </fix>
+      <fix>
+        Make handling of OpenSSL read errors more robust when plain text data is
+        reported to be available to read. (markt)
+      </fix>
+      <fix>
+        Correct handling of write errors during non-blocking I/O to ensure that
+        the associated <code>AsyncContext</code> was closed down correctly.
+        (markt)
       </fix>
     </changelog>
   </subsection>
@@ -219,6 +423,9 @@
       <add>
         Improvements to Chinese translations. Provided by shawn. (mark)
       </add>
+      <update>
+        Update to bnd 5.3.0. (markt)
+      </update>
     </changelog>
   </subsection>
 </section>

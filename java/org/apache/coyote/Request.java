@@ -167,7 +167,18 @@ public final class Request {
      */
     private Exception errorException = null;
 
+    /*
+     * State for non-blocking output is maintained here as it is the one point
+     * easily reachable from the CoyoteInputStream and the CoyoteAdapter which
+     * both need access to state.
+     */
     volatile ReadListener listener;
+    // Ensures listener is only fired after a call is isReady()
+    private boolean fireListener = false;
+    // Tracks read registration to prevent duplicate registrations
+    private boolean registeredForRead = false;
+    // Lock used to manage concurrent access to above flags
+    private final Object nonBlockingStateLock = new Object();
 
     public ReadListener getReadListener() {
         return listener;
@@ -192,7 +203,71 @@ public final class Request {
         }
 
         this.listener = listener;
+
+        // The container is responsible for the first call to
+        // listener.onDataAvailable(). If isReady() returns true, the container
+        // needs to call listener.onDataAvailable() from a new thread. If
+        // isReady() returns false, the socket will be registered for read and
+        // the container will call listener.onDataAvailable() once data arrives.
+        // Must call isFinished() first as a call to isReady() if the request
+        // has been finished will register the socket for read interest and that
+        // is not required.
+        if (!isFinished() && isReady()) {
+            synchronized (nonBlockingStateLock) {
+                // Ensure we don't get multiple read registrations
+                registeredForRead = true;
+                // Need to set the fireListener flag otherwise when the
+                // container tries to trigger onDataAvailable, nothing will
+                // happen
+                fireListener = true;
+            }
+            action(ActionCode.DISPATCH_READ, null);
+            if (!ContainerThreadMarker.isContainerThread()) {
+                // Not on a container thread so need to execute the dispatch
+                action(ActionCode.DISPATCH_EXECUTE, null);
+            }
+        }
     }
+
+    public boolean isReady() {
+        // Assume read is not possible
+        boolean ready = false;
+        synchronized (nonBlockingStateLock) {
+            if (registeredForRead) {
+                fireListener = true;
+                return false;
+            }
+            ready = checkRegisterForRead();
+            fireListener = !ready;
+        }
+        return ready;
+    }
+
+    private boolean checkRegisterForRead() {
+        AtomicBoolean ready = new AtomicBoolean(false);
+        synchronized (nonBlockingStateLock) {
+            if (!registeredForRead) {
+                action(ActionCode.NB_READ_INTEREST, ready);
+                registeredForRead = !ready.get();
+            }
+        }
+        return ready.get();
+    }
+
+    public void onDataAvailable() throws IOException {
+        boolean fire = false;
+        synchronized (nonBlockingStateLock) {
+            registeredForRead = false;
+            if (fireListener) {
+                fireListener = false;
+                fire = true;
+            }
+        }
+        if (fire) {
+            listener.onDataAvailable();
+        }
+    }
+
 
     private final AtomicBoolean allDataReadEventSent = new AtomicBoolean(false);
 
@@ -700,7 +775,13 @@ public final class Request {
         authType.recycle();
         attributes.clear();
 
+        errorException = null;
+
         listener = null;
+        synchronized (nonBlockingStateLock) {
+            fireListener = false;
+            registeredForRead = false;
+        }
         allDataReadEventSent.set(false);
 
         startTimeNanos = -1;

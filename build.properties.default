@@ -25,17 +25,23 @@
 # ----- Version Control Flags -----
 version.major=10
 version.minor=0
-version.build=3
+version.build=6
 version.patch=0
 version.suffix=-dev
+
+# ----- Reproducible builds -----
+# Uncomment and set to current time for reproducible builds
+#2021-03-18T06:00:00Z
+#ant.tstamp.now=1616047200
 
 # ----- Source control flags -----
 git.branch=master
 
 # ----- Build control flags -----
 # Note enabling validation uses Checkstyle which is LGPL licensed
-ant.version.required=1.9.8
+ant.version.required=1.9.10
 execute.validate=false
+execute.download=true
 execute.test.nio=true
 execute.test.nio2=true
 # Still requires APR/native library to be present
@@ -141,19 +147,19 @@ jdt.loc.1=http://archive.eclipse.org/eclipse/downloads/drops4/${jdt.release}/ecj
 jdt.loc.2=http://download.eclipse.org/eclipse/downloads/drops4/${jdt.release}/ecj-${jdt.version}.jar
 
 # ----- Tomcat native library -----
-tomcat-native.version=1.2.26
+tomcat-native.version=1.2.28
 tomcat-native.src.checksum.enabled=true
 tomcat-native.src.checksum.algorithm=SHA-512
-tomcat-native.src.checksum.value=cad9d9efdb6c980afcf304bd78e5ea572271075e153e2015d393dd5e6f4612992c7d0ac499c9aeafe0c3874832356e197564717df15b36a48aba775960659ac2
+tomcat-native.src.checksum.value=16b8659dcd228ea153d05c9ae19e3d97add944315f3b8b42905162d0e4e8a28fd51a172d59d7da8508271ecad0b8ac025a386895565acaf8e2ba11fba77492bb
 tomcat-native.win.checksum.enabled=true
 tomcat-native.win.checksum.algorithm=SHA-512
-tomcat-native.win.checksum.value=607b45074fda397f2fc49f0f3b4128df5373d692b82167f39f5430e04846b788db1487c0805173c924ab0c94d5767b6c5bba887a1148f104eca39c09d19539d1
+tomcat-native.win.checksum.value=a0a7c05ca1b2b873456e2331232f9752b52af23a205e61d14905e0779f4c517563438b45fc36b1a81803f67d47b39e77009e4a4e892a3fd0e548398ed9a69dc3
 tomcat-native.home=${base.path}/tomcat-native-${tomcat-native.version}
 tomcat-native.tar.gz=${tomcat-native.home}/tomcat-native.tar.gz
 tomcat-native.loc.1=${base-tomcat.loc.1}/tomcat-connectors/native/${tomcat-native.version}/source/tomcat-native-${tomcat-native.version}-src.tar.gz
 tomcat-native.loc.2=${base-tomcat.loc.2}/tomcat-connectors/native/${tomcat-native.version}/source/tomcat-native-${tomcat-native.version}-src.tar.gz
-tomcat-native.win.1=${base-tomcat.loc.1}/tomcat-connectors/native/${tomcat-native.version}/binaries/tomcat-native-${tomcat-native.version}-openssl-1.1.1i-win32-bin.zip
-tomcat-native.win.2=${base-tomcat.loc.2}/tomcat-connectors/native/${tomcat-native.version}/binaries/tomcat-native-${tomcat-native.version}-openssl-1.1.1i-win32-bin.zip
+tomcat-native.win.1=${base-tomcat.loc.1}/tomcat-connectors/native/${tomcat-native.version}/binaries/tomcat-native-${tomcat-native.version}-openssl-1.1.1k-win32-bin.zip
+tomcat-native.win.2=${base-tomcat.loc.2}/tomcat-connectors/native/${tomcat-native.version}/binaries/tomcat-native-${tomcat-native.version}-openssl-1.1.1k-win32-bin.zip
 
 # ----- NSIS, version 3.0 or later -----
 nsis.version=3.06.1
@@ -244,6 +250,15 @@ objenesis.home=${base.path}/objenesis-${objenesis.version}
 objenesis.jar=${objenesis.home}/objenesis-${objenesis.version}.jar
 objenesis.loc=${base-maven.loc}/org/objenesis/objenesis/${objenesis.version}/objenesis-${objenesis.version}.jar
 
+# ----- UnboundID, used by unit tests, version 5.1.4 or later -----
+unboundid.version=5.1.4
+unboundid.checksum.enabled=true
+unboundid.checksum.algorithm=SHA-512
+unboundid.checksum.value=04cf7f59eddebdd5b51e5be55021f9d9c667cca6101eac954e7a8d5b51f4c23372cd8f041640157f082435a166b75d85e79252b516130ede7d966dae6d3eae67
+unboundid.home=${base.path}/unboundid-${unboundid.version}
+unboundid.jar=${unboundid.home}/unboundid-ldapsdk-${unboundid.version}.jar
+unboundid.loc=${base-maven.loc}/com/unboundid/unboundid-ldapsdk/${unboundid.version}/unboundid-ldapsdk-${unboundid.version}.jar
+
 # ----- Checkstyle, version 6.16 or later -----
 checkstyle.version=8.22
 checkstyle.checksum.enabled=true
@@ -273,29 +288,22 @@ findbugs.loc=${base-maven.loc}/com/github/spotbugs/spotbugs/${findbugs.version}/
 
 # ----- bnd, version 5.3.0 or later  -----
 # ----- provides OSGI metadata for JARs       -----
-# *** Using SNAPSHOT *** Using SNAPSHOT *** Using SNAPSHOT ***
-# The specific version used for release builds will be archived at
-# https://home.apache.org/~markt/dev/deps/bnd-5.3.0-SNAPHOT/
-# *** Using SNAPSHOT *** Using SNAPSHOT *** Using SNAPSHOT ***
-bnd.version=5.3.0-SNAPSHOT
+bnd.version=5.3.0
 
-# checksums for biz.aQute.bnd-5.2.0.jar
-# *** Disabled while we depend on SNAPSHOT JARs ***
-bnd.checksum.enabled=false
+# checksums for biz.aQute.bnd-5.3.0.jar
+bnd.checksum.enabled=true
 bnd.checksum.algorithm=MD5|SHA-1
-bnd.checksum.value=3254df4b94104002f79005ae54ec1dbb|1d69d0a5862133ac1f54555c9cd59011d79bbb86
+bnd.checksum.value=7cba73481ee6e72b182ba5c13801aafe|10ec0974db02f810e9345b218f4de4abe898ab04
 
 bnd.home=${base.path}/bnd-${bnd.version}
 bnd.jar=${bnd.home}/biz.aQute.bnd-${bnd.version}.jar
-# *** Temporary change to use the SNAPSHOT repository ***
-# bnd.loc=${base-maven.loc}/biz/aQute/bnd/biz.aQute.bnd/${bnd.version}/biz.aQute.bnd-${bnd.version}.jar
-bnd.loc=https://bndtools.jfrog.io/bndtools/update-snapshot/biz/aQute/bnd/biz.aQute.bnd/${bnd.version}/biz.aQute.bnd-${bnd.version}.jar
+bnd.loc=${base-maven.loc}/biz/aQute/bnd/biz.aQute.bnd/${bnd.version}/biz.aQute.bnd-${bnd.version}.jar
 
 # ----- OSGi annotations bundle, version 1.0.0 or later            -----
 # ----- required to avoid Javadoc error when using bnd annotations -----
 osgi-annotations.version=1.0.0
 
-# checksums for biz.aQute.bnd-5.2.0.jar
+# checksums for OSGi annotations, version 1.0.0
 osgi-annotations.checksum.enabled=true
 osgi-annotations.checksum.algorithm=MD5|SHA-1
 osgi-annotations.checksum.value=153054f987534244f95a399539b11375|b6e802bceba0682353466abf8fadbbd662b2f7f8

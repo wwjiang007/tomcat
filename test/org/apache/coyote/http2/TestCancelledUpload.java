@@ -19,6 +19,8 @@ package org.apache.coyote.http2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,127 +40,111 @@ public class TestCancelledUpload extends Http2TestBase {
     public void testCancelledRequest() throws Exception {
         http2Connect();
 
-        ((AbstractHttp11Protocol<?>) http2Protocol.getHttp11Protocol()).setAllowedTrailerHeaders(TRAILER_HEADER_NAME);
+        LogManager.getLogManager().getLogger("org.apache.coyote.http2").setLevel(Level.ALL);
+        try {
+            ((AbstractHttp11Protocol<?>) http2Protocol.getHttp11Protocol()).setAllowedTrailerHeaders(TRAILER_HEADER_NAME);
 
-        int bodySize = 8192;
-        int bodyCount = 20;
+            int bodySize = 8192;
+            int bodyCount = 20;
 
-        byte[] headersFrameHeader = new byte[9];
-        ByteBuffer headersPayload = ByteBuffer.allocate(128);
-        byte[] dataFrameHeader = new byte[9];
-        ByteBuffer dataPayload = ByteBuffer.allocate(bodySize);
-        byte[] trailerFrameHeader = new byte[9];
-        ByteBuffer trailerPayload = ByteBuffer.allocate(256);
+            byte[] headersFrameHeader = new byte[9];
+            ByteBuffer headersPayload = ByteBuffer.allocate(128);
+            byte[] dataFrameHeader = new byte[9];
+            ByteBuffer dataPayload = ByteBuffer.allocate(bodySize);
+            byte[] trailerFrameHeader = new byte[9];
+            ByteBuffer trailerPayload = ByteBuffer.allocate(256);
 
-        buildPostRequest(headersFrameHeader, headersPayload, false, dataFrameHeader, dataPayload,
-                null, trailerFrameHeader, trailerPayload, 3);
+            buildPostRequest(headersFrameHeader, headersPayload, false, dataFrameHeader, dataPayload,
+                    null, trailerFrameHeader, trailerPayload, 3);
 
-        // Write the headers
-        writeFrame(headersFrameHeader, headersPayload);
-        // Body
-        for (int i = 0; i < bodyCount; i++) {
-            writeFrame(dataFrameHeader, dataPayload);
-        }
+            // Write the headers
+            writeFrame(headersFrameHeader, headersPayload);
+            // Body
+            for (int i = 0; i < bodyCount; i++) {
+                writeFrame(dataFrameHeader, dataPayload);
+            }
 
-        // Trailers
-        writeFrame(trailerFrameHeader, trailerPayload);
+            // Trailers
+            writeFrame(trailerFrameHeader, trailerPayload);
 
-        // The Server will process the request on a separate thread to the
-        // incoming frames.
-        // The request processing thread will:
-        // - read up to 128 bytes of request body
-        //   (and issue a window update for bytes read)
-        // - write a 403 response with no response body
-        // The connection processing thread will:
-        // - read the request body until the flow control window is exhausted
-        // - reset the stream if further DATA frames are received
-        parser.readFrame(true);
-
-        // If reset is first frame received end test here
-        if (checkReset()) {
-            return;
-        }
-
-        // Validate any WindowSize frames. Usually arrive in pairs. Depending on
-        // timing, can see a reset rather than than stream update.
-        while (output.getTrace().startsWith("0-WindowSize-[")) {
-            String trace = output.getTrace();
-            int size = Integer.parseInt(trace.substring(14, trace.length() - 2));
-            output.clearTrace();
+            // The Server will process the request on a separate thread to the
+            // incoming frames.
+            // The request processing thread will:
+            // - read up to 128 bytes of request body
+            //   (and issue a window update for bytes read)
+            // - write a 403 response with no response body
+            // The connection processing thread will:
+            // - read the request body until the flow control window is exhausted
+            // - reset the stream if further DATA frames are received
             parser.readFrame(true);
+
+            // Check for reset and exit if found
             if (checkReset()) {
                 return;
             }
-            Assert.assertEquals("3-WindowSize-[" + size + "]\n", output.getTrace());
+
+            // Not window update, not reset, must be the headers
+            Assert.assertEquals("3-HeadersStart\n" +
+                    "3-Header-[:status]-[403]\n" +
+                    "3-Header-[content-length]-[0]\n" +
+                    "3-Header-[date]-[Wed, 11 Nov 2015 19:18:42 GMT]\n" +
+                    "3-HeadersEnd\n",
+                    output.getTrace());
             output.clearTrace();
             parser.readFrame(true);
-        }
 
-        // Check for reset and exit if found
-        if (checkReset()) {
-            return;
-        }
-
-        // Not window update, not reset, must be the headers
-        Assert.assertEquals("3-HeadersStart\n" +
-                "3-Header-[:status]-[403]\n" +
-                "3-Header-[content-length]-[0]\n" +
-                "3-Header-[date]-[Wed, 11 Nov 2015 19:18:42 GMT]\n" +
-                "3-HeadersEnd\n",
-                output.getTrace());
-        output.clearTrace();
-
-        parser.readFrame(true);
-        // Check for reset and exit if found
-        if (checkReset()) {
-            return;
-        }
-
-        // Not reset, must be request body
-        Assert.assertEquals("3-Body-0\n" +
-                "3-EndOfStream\n",
-                output.getTrace());
-        output.clearTrace();
-
-        // There must be a reset. There may be some WindowSize frames
-        parser.readFrame(true);
-
-        // Validate any WindowSize frames. Usually arrive in pairs. Depending on
-        // timing, can see a reset rather than than stream update.
-        while (output.getTrace().startsWith("0-WindowSize-[")) {
-            String trace = output.getTrace();
-            int size = Integer.parseInt(trace.substring(14, trace.length() - 2));
-            output.clearTrace();
-            parser.readFrame(true);
+            // Check for reset and exit if found
             if (checkReset()) {
                 return;
             }
-            Assert.assertEquals("3-WindowSize-[" + size + "]\n", output.getTrace());
+
+            // Not window update, not reset, must be the response body
+            Assert.assertEquals("3-Body-0\n" +
+                    "3-EndOfStream\n",
+                    output.getTrace());
             output.clearTrace();
             parser.readFrame(true);
+
+            Assert.assertTrue(checkReset());
+
+            // If there are any more frames after this, ignore them
+        } finally {
+            LogManager.getLogManager().getLogger("org.apache.coyote.http2").setLevel(Level.INFO);
         }
-
-        // This should be the reset
-        checkReset();
-        Assert.assertEquals("3-RST-[3]\n", output.getTrace());
-
-        // If there are any more frames after this, ignore them
     }
 
 
     /*
-     * Depending on timing, several resets may be sent.
+     * Looking for a RST frame with error type 3 (flow control error).
+     *
+     * If there is a flow control window update for stream 0 it may be followed
+     * by one for stream 3.
+     *
+     * If there is a flow control window update for stream 3 it will always be
+     * preceded by one for stream 0.
      */
     private boolean checkReset() throws IOException, Http2Exception {
+        int lastConnectionFlowControlWindowUpdate = -1;
         while (true) {
-            if (output.getTrace().startsWith("3-RST-[3]\n")) {
+            String trace = output.getTrace();
+            if (trace.startsWith("3-RST-[3]\n")) {
+                // This is the reset we are looking for
                 return true;
-            } else if (output.getTrace().startsWith("3-RST-[")) {
-                output.clearTrace();
-                parser.readFrame(true);
+            } else if (trace.startsWith("3-RST-[")) {
+                // Probably error type 8 (cancel) - ignore
+            } else if (trace.startsWith("0-WindowSize-[")) {
+                // Connection flow control window update
+                lastConnectionFlowControlWindowUpdate = Integer.parseInt(trace.substring(14, trace.length() - 2));
+            } else if (trace.startsWith("3-WindowSize-[")) {
+                // Stream flow control window update
+                // Must be same size as last connection flow control window
+                // update. True for Tomcat anyway.
+                Assert.assertEquals("3-WindowSize-[" + lastConnectionFlowControlWindowUpdate + "]\n", trace);
             } else {
                 return false;
             }
+            output.clearTrace();
+            parser.readFrame(true);
         }
     }
 

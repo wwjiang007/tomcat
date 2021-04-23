@@ -53,17 +53,17 @@
 
   <!-- Exact spec versions (for the manifests etc.) -->
   <property name="servlet.spec.version"    value="5.0" />
-  <property name="servlet.revision"        value="0-M1" />
+  <property name="servlet.revision"        value="0" />
   <property name="jsp.spec.version"        value="3.0" />
-  <property name="jsp.revision"            value="0-M1" />
+  <property name="jsp.revision"            value="0" />
   <property name="el.spec.version"         value="4.0" />
-  <property name="el.revision"             value="0-M1" />
+  <property name="el.revision"             value="0" />
   <property name="websocket.spec.version"  value="2.0" />
-  <property name="websocket.revision"      value="0-M1" />
+  <property name="websocket.revision"      value="0" />
   <property name="jaspic.spec.version"     value="2.0" />
-  <property name="jaspic.revision"         value="0-M1" />
+  <property name="jaspic.revision"         value="0" />
   <property name="annotation.spec.version" value="2.0" />
-  <property name="annotation.revision"     value="0-M1" />
+  <property name="annotation.revision"     value="0" />
 
   <!-- Release artifact base names -->
   <property name="final.name"            value="${project}-${version}" />
@@ -80,6 +80,7 @@
   <property name="tomcat.dist"           value="${tomcat.output}/dist"/>
   <property name="tomcat.embed"          value="${tomcat.output}/embed"/>
   <property name="tomcat.embed.sources"  value="${tomcat.output}/embed-src-jars"/>
+  <property name="tomcat.graal"          value="${tomcat.output}/graal"/>
   <property name="tomcat.i18n"           value="${tomcat.output}/i18n"/>
   <property name="tomcat.manifests"      value="${tomcat.output}/manifests"/>
   <property name="tomcat.release"        value="${tomcat.output}/release"/>
@@ -256,6 +257,7 @@
     <pathelement location="${easymock.jar}"/>
     <pathelement location="${cglib.jar}"/>
     <pathelement location="${objenesis.jar}"/>
+    <pathelement location="${unboundid.jar}"/>
     <path refid="compile.classpath" />
     <path refid="tomcat.classpath" />
   </path>
@@ -266,6 +268,7 @@
     <format property="today" pattern="MMM d yyyy" locale="en" timezone="UTC"/>
     <format property="today-iso-8601" pattern="yyyy-MM-dd" locale="en" timezone="UTC"/>
     <format property="tstamp" pattern="HH:mm:ss" locale="en" timezone="UTC"/>
+    <format property="tstamp.file" pattern="MM/dd/yyyy hh:mm:ss aa"/>
   </tstamp>
   <filterset id="version.filters">
     <filter token="YEAR" value="${year}"/>
@@ -286,6 +289,7 @@
     <include name="**/LICENSE"/>
     <include name="**/NOTICE"/>
     <include name="**/RELEASE-NOTES"/>
+    <include name="**/jakarta.el.ExpressionFactory"/>
     <include name="**/jakarta.servlet.ServletContainerInitializer"/>
     <include name="**/jakarta.websocket.ContainerProvider"/>
     <include name="**/jakarta.websocket.server.ServerEndpointConfig$Configurator"/>
@@ -332,6 +336,7 @@
     <include name="**/*.xsd"/>
     <include name="**/*.xsl"/>
     <include name="**/*.yaml"/>
+    <include name="**/*.yml"/>
     <include name="**/Dockerfile"/>
     <!-- Exclude files that use 16-bit encodings. -->
     <!-- This prevents fixcrlf corrupting them during a release -->
@@ -989,7 +994,6 @@
     when loading the ResourceBundles -->
     <native2ascii src="java" dest="${tomcat.classes}" includes="**/LocalStrings.properties,**/Messages*.properties" encoding="UTF-8"/>
     <native2ascii src="java" dest="${tomcat.i18n}" includes="**/LocalStrings_*.properties" encoding="UTF-8"/>
-
   </target>
 
   <target name="build-manifests" unless="manifests.uptodate"
@@ -1016,7 +1020,6 @@
       <filterset refid="version.filters"/>
       <fileset dir="${tomcat.home}/res/META-INF" />
     </copy>
-
   </target>
 
   <target name="package" depends="compile,build-manifests" >
@@ -1175,7 +1178,8 @@
 
     <!-- i18n JARs -->
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-cs.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_cs.properties" />
       </fileset>
@@ -1185,7 +1189,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-de.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_de.properties" />
       </fileset>
@@ -1195,7 +1200,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-es.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_es.properties" />
       </fileset>
@@ -1205,7 +1211,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-fr.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_fr.properties" />
       </fileset>
@@ -1215,7 +1222,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-ja.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_ja.properties" />
       </fileset>
@@ -1225,7 +1233,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-ko.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_ko.properties" />
       </fileset>
@@ -1235,7 +1244,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-pt-BR.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_pt_BR.properties" />
       </fileset>
@@ -1245,7 +1255,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-ru.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_ru.properties" />
       </fileset>
@@ -1255,7 +1266,8 @@
         fullpath="META-INF/LICENSE" />
     </jar>
     <jar jarfile="${tomcat.build}/lib/tomcat-i18n-zh-CN.jar"
-      manifest="${tomcat.manifests}/default.manifest">
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
       <fileset dir="${tomcat.i18n}">
         <include name="**/LocalStrings_zh_CN.properties" />
       </fileset>
@@ -1520,6 +1532,7 @@
     <echo message="Building Tomcat JDBC pool libraries"/>
     <ant antfile="${tomcat.jdbc.dir}/build.xml" dir="${tomcat.jdbc.dir}"
          inheritAll="false" target="build">
+      <property name="ant.tstamp.now.iso" value ="${ant.tstamp.now.iso}" />
       <property name="tomcat.pool" value="${tomcat.pool}" />
       <property name="tomcat.juli.jar" value="${tomcat-juli.jar}" />
       <property name="skip.download" value="set"/>
@@ -1776,7 +1789,10 @@
         encoding="ISO-8859-1" fixlast="false" >
       <patternset refid="text.files" />
     </fixcrlf>
-    <zip destfile="${tomcat.embed}/${final.name}-embed.zip">
+
+    <zip destfile="${tomcat.embed}/${final.name}-embed.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
       <fileset dir="${tomcat.embed}">
         <include name="**" />
         <exclude name="*.asc" />
@@ -1791,6 +1807,12 @@
         encoding="ISO-8859-1" fixlast="false" >
       <patternset refid="text.files" />
     </fixcrlf>
+
+    <!-- Reproducible builds: consistent timestamps for distributed files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.embed}"/>
+    </touch>
+
     <tar longfile="gnu" compression="gzip"
          tarfile="${tomcat.embed}/${final.name}-embed.tar.gz">
       <tarfileset dir="${tomcat.embed}" prefix="${final.name}-embed">
@@ -2412,31 +2434,37 @@ Apache Tomcat ${version} native binaries for Win64 AMD64/EMT64 platform.
     </copy>
 
     <!-- Digester and dependencies -->
-    <jar jarfile="${tomcat.deployer}/lib/catalina-deployer.jar">
-       <fileset dir="${tomcat.classes}">
-          <include name="org/apache/catalina/startup/DigesterFactory.class" />
-          <include name="org/apache/catalina/util/SchemaResolver.class" />
-          <include name="org/apache/catalina/util/StringManager.class" />
-          <include name="org/apache/tomcat/util/*" />
-          <include name="org/apache/tomcat/util/digester/**" />
-          <exclude name="org/apache/tomcat/util/bcel" />
-          <exclude name="org/apache/tomcat/util/buf" />
-          <exclude name="org/apache/tomcat/util/codec" />
-          <exclude name="org/apache/tomcat/util/collections" />
-          <exclude name="org/apache/tomcat/util/compat" />
-          <exclude name="org/apache/tomcat/util/descriptor" />
-          <exclude name="org/apache/tomcat/util/file" />
-          <exclude name="org/apache/tomcat/util/http" />
-          <exclude name="org/apache/tomcat/util/log" />
-          <exclude name="org/apache/tomcat/util/modeler" />
-          <exclude name="org/apache/tomcat/util/net" />
-          <exclude name="org/apache/tomcat/util/res" />
-          <exclude name="org/apache/tomcat/util/scan" />
-          <exclude name="org/apache/tomcat/util/security" />
-          <exclude name="org/apache/tomcat/util/threads" />
-          <exclude name="**/package.html" />
-          <exclude name="**/LocalStrings_*" />
-       </fileset>
+    <jar jarfile="${tomcat.deployer}/lib/catalina-deployer.jar"
+         manifest="${tomcat.manifests}/default.manifest"
+         modificationtime="${tstamp.file}">
+      <fileset dir="${tomcat.classes}">
+        <include name="org/apache/catalina/startup/DigesterFactory.class" />
+        <include name="org/apache/catalina/util/SchemaResolver.class" />
+        <include name="org/apache/catalina/util/StringManager.class" />
+        <include name="org/apache/tomcat/util/*" />
+        <include name="org/apache/tomcat/util/digester/**" />
+        <exclude name="org/apache/tomcat/util/bcel" />
+        <exclude name="org/apache/tomcat/util/buf" />
+        <exclude name="org/apache/tomcat/util/codec" />
+        <exclude name="org/apache/tomcat/util/collections" />
+        <exclude name="org/apache/tomcat/util/compat" />
+        <exclude name="org/apache/tomcat/util/descriptor" />
+        <exclude name="org/apache/tomcat/util/file" />
+        <exclude name="org/apache/tomcat/util/http" />
+        <exclude name="org/apache/tomcat/util/log" />
+        <exclude name="org/apache/tomcat/util/modeler" />
+        <exclude name="org/apache/tomcat/util/net" />
+        <exclude name="org/apache/tomcat/util/res" />
+        <exclude name="org/apache/tomcat/util/scan" />
+        <exclude name="org/apache/tomcat/util/security" />
+        <exclude name="org/apache/tomcat/util/threads" />
+        <exclude name="**/package.html" />
+        <exclude name="**/LocalStrings_*" />
+      </fileset>
+      <zipfileset file="${tomcat.manifests}/default.notice"
+        fullpath="META-INF/NOTICE" />
+      <zipfileset file="${tomcat.manifests}/default.license"
+        fullpath="META-INF/LICENSE" />
     </jar>
 
     <!-- Main build script -->
@@ -2553,6 +2581,10 @@ skip.installer property in build.properties" />
         encoding="ISO-8859-1" fixlast="false" >
       <patternset refid="text.files" />
     </fixcrlf>
+    <!-- Reproducible builds: consistent timestamps for installer files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+    </touch>
   </target>
 
   <target name="-installer-create-tempinstaller"
@@ -2580,7 +2612,10 @@ skip.installer property in build.properties" />
     <exec dir="${tomcat.dist}" executable="wine" osfamily="unix">
       <arg value="${tomcat.dist}/tempinstaller.exe" />
     </exec>
-
+    <!-- Reproducible builds: consistent timestamps for installer files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+    </touch>
   </target>
 
   <target name="-installer-sign-uninstaller"
@@ -2688,7 +2723,10 @@ skip.installer property in build.properties" />
       <patternset refid="text.files" />
     </fixcrlf>
 
-    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}.zip">
+    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset file="${tomcat.dist}" fullpath="${final.name}"/>
       <zipfileset dir="${tomcat.dist}" prefix="${final.name}">
         <include name="bin/**"/>
         <include name="conf/**"/>
@@ -2722,7 +2760,10 @@ skip.installer property in build.properties" />
     </fixcrlf>
 
     <!-- Windows x86 package -->
-    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-windows-x86.zip">
+    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-windows-x86.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset file="${tomcat.dist}" fullpath="${final.name}"/>
       <zipfileset dir="${tomcat.dist}" prefix="${final.name}">
         <include name="bin/**"/>
         <include name="conf/**"/>
@@ -2747,7 +2788,10 @@ skip.installer property in build.properties" />
     <hashAndSign file="${tomcat.release}/v${version}/bin/${final.name}-windows-x86.zip" />
 
     <!-- Windows x64 package -->
-    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-windows-x64.zip">
+    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-windows-x64.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset file="${tomcat.dist}" fullpath="${final.name}"/>
       <zipfileset dir="${tomcat.dist}" prefix="${final.name}">
         <include name="bin/**"/>
         <include name="conf/**"/>
@@ -2788,7 +2832,10 @@ skip.installer property in build.properties" />
       <patternset refid="text.files" />
     </fixcrlf>
 
-    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-deployer.zip">
+    <zip zipfile="${tomcat.release}/v${version}/bin/${final.name}-deployer.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset file="${tomcat.deployer}" fullpath="${final.name}-deployer"/>
       <zipfileset dir="${tomcat.deployer}" prefix="${final.name}-deployer" includes="**" />
       <zipfileset dir="${tomcat.dist}" prefix="${final.name}-deployer" includes="LICENSE" />
       <zipfileset dir="${tomcat.dist}" prefix="${final.name}-deployer" includes="NOTICE" />
@@ -2805,6 +2852,11 @@ skip.installer property in build.properties" />
         encoding="ISO-8859-1" fixlast="false" >
       <patternset refid="text.files" />
     </fixcrlf>
+
+    <!-- Reproducible builds: consistent timestamps for distributed files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+    </touch>
 
     <tar longfile="gnu" compression="gzip"
          tarfile="${tomcat.release}/v${version}/bin/${final.name}.tar.gz">
@@ -2854,6 +2906,12 @@ skip.installer property in build.properties" />
       <patternset refid="text.files" />
     </fixcrlf>
 
+    <!-- Reproducible builds: consistent timestamps for distributed files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+      <fileset dir="${tomcat.deployer}"/>
+    </touch>
+
     <tar longfile="gnu" compression="gzip"
          tarfile="${tomcat.release}/v${version}/bin/${final.name}-deployer.tar.gz">
       <tarfileset dir="${tomcat.dist}" prefix="${final.name}-deployer">
@@ -2877,6 +2935,11 @@ skip.installer property in build.properties" />
       <patternset refid="text.files" />
     </fixcrlf>
 
+    <!-- Reproducible builds: consistent timestamps for distributed files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+    </touch>
+
     <tar longfile="gnu" compression="gzip"
          tarfile="${tomcat.release}/v${version}/bin/${final.name}-fulldocs.tar.gz">
       <tarfileset dir="${tomcat.dist}" prefix="tomcat-${version.major.minor}-doc">
@@ -2899,9 +2962,14 @@ skip.installer property in build.properties" />
       <patternset refid="text.files"/>
       <include name="bin/*.bat" />
       <include name="bin/*.sh" />
+      <include name=".travis/*.sh" />
+      <include name="res/graal/*.sh" />
     </fixcrlf>
 
-    <zip zipfile="${tomcat.release}/v${version}/src/${final-src.name}.zip">
+    <zip zipfile="${tomcat.release}/v${version}/src/${final-src.name}.zip"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset file="${tomcat.dist}/src" fullpath="${final-src.name}" />
       <zipfileset dir="${tomcat.dist}/src" prefix="${final-src.name}" />
     </zip>
 
@@ -2915,7 +2983,14 @@ skip.installer property in build.properties" />
       <patternset refid="text.files"/>
       <include name="bin/*.bat" />
       <include name="bin/*.sh" />
+      <include name=".travis/*.sh" />
+      <include name="res/graal/*.sh" />
     </fixcrlf>
+
+    <!-- Reproducible builds: consistent timestamps for distributed files -->
+    <touch datetime="${tstamp.file}" pattern="MM/dd/yyyy hh:mm:ss aa">
+      <fileset dir="${tomcat.dist}"/>
+    </touch>
 
     <tar longfile="gnu" compression="gzip"
          tarfile="${tomcat.release}/v${version}/src/${final-src.name}.tar.gz">
@@ -3197,6 +3272,15 @@ skip.installer property in build.properties" />
       <param name="checksum.value" value="${objenesis.checksum.value}"/>
     </antcall>
 
+    <antcall target="downloadfile">
+      <param name="sourcefile" value="${unboundid.loc}"/>
+      <param name="destfile" value="${unboundid.jar}"/>
+      <param name="destdir" value="${unboundid.home}"/>
+      <param name="checksum.enabled" value="${unboundid.checksum.enabled}"/>
+      <param name="checksum.algorithm" value="${unboundid.checksum.algorithm}"/>
+      <param name="checksum.value" value="${unboundid.checksum.value}"/>
+    </antcall>
+
   </target>
 
   <target name="download-cobertura"
@@ -3411,7 +3495,7 @@ skip.installer property in build.properties" />
     </sequential>
   </macrodef>
 
-  <target name="downloadgz" unless="exist" depends="testexist,setproxy">
+  <target name="downloadgz" unless="exist" if="${execute.download}" depends="testexist,setproxy">
     <!-- Download and extract the package -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3428,7 +3512,7 @@ skip.installer property in build.properties" />
     <delete file="${temp.file}.tar.gz"/>
   </target>
 
-  <target name="downloadgz-2" unless="exist" depends="testexist">
+  <target name="downloadgz-2" unless="exist" if="${execute.download}" depends="testexist">
     <!-- Download and extract the package from the two alternative locations -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3453,7 +3537,7 @@ skip.installer property in build.properties" />
     <delete file="${temp.file}.tar.gz"/>
   </target>
 
-  <target name="downloadzip" unless="exist" depends="testexist,setproxy">
+  <target name="downloadzip" unless="exist" if="${execute.download}" depends="testexist,setproxy">
     <!-- Download and extract the package -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3469,7 +3553,7 @@ skip.installer property in build.properties" />
     <delete file="${temp.file}"/>
   </target>
 
-  <target name="downloadzip-2" unless="exist" depends="testexist">
+  <target name="downloadzip-2" unless="exist" if="${execute.download}" depends="testexist">
     <!-- Download and extract the package from the two alternative locations -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3493,7 +3577,7 @@ skip.installer property in build.properties" />
     <delete file="${temp.file}"/>
   </target>
 
-  <target name="downloadfile" unless="exist" depends="testexist,setproxy">
+  <target name="downloadfile" unless="exist" if="${execute.download}" depends="testexist,setproxy">
     <!-- Download the file -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3508,7 +3592,7 @@ skip.installer property in build.properties" />
     <move file="${temp.file}" tofile="${destfile}"/>
   </target>
 
-  <target name="downloadfile-2" unless="exist" depends="testexist">
+  <target name="downloadfile-2" unless="exist" if="${execute.download}" depends="testexist">
     <!-- Download the file from the two alternative locations -->
     <local name="temp.file"/>
     <mkdir dir="${base.path}"/>
@@ -3698,7 +3782,9 @@ Read the Building page on the Apache Tomcat documentation site for details on ho
         <srcfiles file="@{license}" />
       </uptodate>
       <sequential unless:true="${jar.uptodate}">
-        <jar jarfile="@{jarfile}" manifest="@{manifest}" >
+        <jar jarfile="@{jarfile}"
+             manifest="@{manifest}"
+             modificationtime="${tstamp.file}">
           <fileset dir="@{filesDir}">
             <patternset refid="@{filesId}"/>
             <!-- Javadoc exclusions -->
@@ -3746,8 +3832,14 @@ Read the Building page on the Apache Tomcat documentation site for details on ho
 
   <target name="add-graal" if="${addGraal}">
     <echo message="add-graal  ${addGraal} ${jarfile} ${graalFiles} ${graalPrefix}"></echo>
-    <zip destfile="${jarfile}" update="true">
-      <zipfileset dir="${basedir}/${graalFiles}" prefix="META-INF/native-image/${graalPrefix}" includes="*.*"/>
+    <!-- Reproducible builds: consistent timestamps for graal files -->
+    <copy todir="${tomcat.graal}/${graalPrefix}">
+      <fileset dir="${basedir}/${graalFiles}" />
+    </copy>
+    <zip destfile="${jarfile}" update="true" filesonly="true"
+         modificationtime="${tstamp.file}"
+         encoding="UTF8">
+      <zipfileset dir="${tomcat.graal}/${graalPrefix}" prefix="META-INF/native-image/${graalPrefix}" includes="*.*"/>
     </zip>
   </target>
 
