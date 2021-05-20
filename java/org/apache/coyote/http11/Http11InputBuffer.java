@@ -550,11 +550,16 @@ public class Http11InputBuffer implements InputBuffer, ApplicationBufferHandler 
                 prevChr = chr;
                 chr = byteBuffer.get();
                 if (chr == Constants.CR) {
-                    // Possible end of request line. Need LF next.
+                    // Possible end of request line. Need LF next else invalid.
                 } else if (prevChr == Constants.CR && chr == Constants.LF) {
+                    // CRLF is the standard line terminator
                     end = pos - 1;
                     parsingRequestLineEol = true;
-                } else if (!HttpParser.isHttpProtocol(chr)) {
+                } else if (chr == Constants.LF) {
+                    // LF is an optional line terminator
+                    end = pos;
+                    parsingRequestLineEol = true;
+                } else if (prevChr == Constants.CR || !HttpParser.isHttpProtocol(chr)) {
                     String invalidProtocol = parseInvalid(parsingRequestLineStart, byteBuffer);
                     throw new IllegalArgumentException(sm.getString("iib.invalidHttpProtocol", invalidProtocol));
                 }
@@ -624,7 +629,7 @@ public class Http11InputBuffer implements InputBuffer, ApplicationBufferHandler 
         while (buffer.hasRemaining() && b != 0x20) {
             b = buffer.get();
         }
-        String result = HeaderUtil.toPrintableString(buffer.array(), buffer.arrayOffset() + startPos, buffer.position() - startPos - 1);
+        String result = HeaderUtil.toPrintableString(buffer.array(), buffer.arrayOffset() + startPos, buffer.position() - startPos);
         if (b != 0x20) {
             // Ran out of buffer rather than found a space
             result = result + "...";
@@ -841,7 +846,8 @@ public class Http11InputBuffer implements InputBuffer, ApplicationBufferHandler 
 
             if (chr == Constants.CR && prevChr != Constants.CR) {
                 // Possible start of CRLF - process the next byte.
-            } else if (prevChr == Constants.CR && chr == Constants.LF) {
+            } else if (chr == Constants.LF) {
+                // CRLF or LF is an acceptable line terminator
                 return HeaderParseStatus.DONE;
             } else {
                 if (prevChr == Constants.CR) {
@@ -953,7 +959,8 @@ public class Http11InputBuffer implements InputBuffer, ApplicationBufferHandler 
                     chr = byteBuffer.get();
                     if (chr == Constants.CR) {
                         // Possible start of CRLF - process the next byte.
-                    } else if (prevChr == Constants.CR && chr == Constants.LF) {
+                    } else if (chr == Constants.LF) {
+                        // CRLF or LF is an acceptable line terminator
                         eol = true;
                     } else if (prevChr == Constants.CR) {
                         // Invalid value
@@ -1031,7 +1038,8 @@ public class Http11InputBuffer implements InputBuffer, ApplicationBufferHandler 
             chr = byteBuffer.get();
             if (chr == Constants.CR) {
                 // Skip
-            } else if (prevChr == Constants.CR && chr == Constants.LF) {
+            } else if (chr == Constants.LF) {
+                // CRLF or LF is an acceptable line terminator
                 eol = true;
             } else {
                 headerData.lastSignificantChar = pos;

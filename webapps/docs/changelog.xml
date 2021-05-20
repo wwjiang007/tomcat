@@ -65,6 +65,7 @@
 
   <!ELEMENT bug (#PCDATA)>
   <!ELEMENT rev (#PCDATA)>
+  <!ELEMENT pr (#PCDATA)>
 
   <!-- Random HTML markup tags. Add more here as needed. -->
   <!ELEMENT a (#PCDATA)>
@@ -103,7 +104,65 @@
   They eventually become mixed with the numbered issues (i.e., numbered
   issues do not "pop up" wrt. others).
 -->
-<section name="Tomcat 10.0.6 (markt)" rtext="in development">
+<section name="Tomcat 10.0.7 (markt)" rtext="in development">
+  <subsection name="Catalina">
+    <changelog>
+      <fix>
+        <bug>65308</bug>: NPE in JNDIRealm when no <code>userRoleAttribute</code>
+        is given. (fschumacher)
+      </fix>
+      <add>
+        <pr>412</pr>: Add commented out, sample users for the Tomcat Manager app
+        to the default <code>tomcat-users.xml</code> file. Based on a PR by
+        Arnaud Dagnelies. (markt)
+      </add>
+      <add>
+        <pr>418</pr>: Add a new option, <code>pass-through</code>, to the
+        default servlet's <code>useBomIfPresent</code> initialization parameter
+        that causes the default servlet to leave any BOM in place when
+        processing a static file and not to use the BOM to determine the
+        encoding of the file. Based on a pull request by Jean-Louis Monteiro.
+        (markt)
+      </add>
+    </changelog>
+  </subsection>
+  <subsection name="Coyote">
+    <changelog>
+      <fix>
+        <bug>65303</bug>: Fix a possible <code>NullPointerException</code> if
+        an error occurs on an HTTP/1.1 connection being upgraded to HTTP/2 or on
+        a pushed HTTP/2 stream. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Jasper">
+    <changelog>
+      <scode>
+        Review code used to generate Java source from JSPs and tags and remove
+        code found to be unnecessary. (markt)
+      </scode>
+      <scode>
+        Refactor use of internal <code>ChildInfo</code> class to use compile
+        time type checking rather than run time type checking. (markt)
+      </scode>
+      <fix>
+        <bug>65124</bug>: Partial fix. When generating Java source code to call
+        a tag handler, only define the local variable <code>JspWriter out</code>
+        when it is going to be used. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Web applications">
+    <changelog>
+      <fix>
+        Improve the description of the <code>maxConnections</code> and
+        <code>acceptCount</code> attributes in the Connector section of the
+        documentation web application. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+</section>
+<section name="Tomcat 10.0.6 (markt)" rtext="2021-05-12">
   <subsection name="Catalina">
     <changelog>
       <scode>
@@ -129,6 +188,32 @@
         resulting in one of the deployments failing and errors being reported.
         (markt)
       </fix>
+      <fix>
+        Improve the <code>SSLValve</code> so it is able to handle escaped
+        client certificate headers from Nginx. Based on a patch by Florent
+        Guillaume. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Coyote">
+    <changelog>
+      <fix>
+        Ensure that all HTTP requests that contain an invalid character in the
+        protocol component of the request line are rejected with a 400 response
+        rather than some requests being rejected with a 505 response. (markt)
+      </fix>
+      <fix>
+        When generating the error message for an HTTP request with an invalid
+        request line, ensure that all the available data is included in the
+        error message. (markt)
+      </fix>
+      <fix>
+        <bug>65272</bug>: Restore the optional HTTP feature that allows
+        <code>LF</code> to be treated as a line terminator for the request line
+        and/or HTTP headers lines as well as the standard <code>CRLF</code>.
+        This behaviour was previously removed as a side-effect of the fix for
+        CVE-2020-1935. (markt)
+      </fix>
     </changelog>
   </subsection>
   <subsection name="Jasper">
@@ -152,11 +237,28 @@
       </fix>
     </changelog>
   </subsection>
+  <subsection name="WebSocket">
+    <changelog>
+      <scode>
+        Refactor the way Tomcat passes path parameters to POJO end points to
+        simplify the code. (markt)
+      </scode>
+      <fix>
+        <bug>65262</bug>: Refactor the creation of WebSocket end point, decoder
+        and encoder instances to be more IoC friendly. Instances are now created
+        via the <code>InstanceManager</code> where possible. (markt)
+      </fix>
+    </changelog>
+  </subsection>
   <subsection name="Web applications">
     <changelog>
       <fix>
         <bug>65235</bug>: Correct name of <code>changeLocalName</code> in the
         documentation for the <code>RemoteIpValve</code>. (markt)
+      </fix>
+      <fix>
+        <bug>65265</bug>: Avoid getting the boot classpath when it is not
+        available in the Manager diagnostics. (remm)
       </fix>
     </changelog>
   </subsection>
@@ -182,6 +284,24 @@
         <bug>65218</bug>: Update the version number shown on the left-hand
         banner of the Tomcat installer for Windows to Apache Tomcat 10. (markt)
       </fix>
+      <fix>
+        Move <code>SystemPropertySource</code> to be a regular class to allow
+        more precise configuration if needed. The system property source will
+        still always be enabled. (remm)
+      </fix>
+      <add>
+        Improvements to Chinese translations. Provided by bytesgo. (mark)
+      </add>
+      <add>
+        Improvements to French translations. (remm)
+      </add>
+      <add>
+        Improvements to Korean translations. (woonsan)
+      </add>
+      <update>
+        Update the version of the Tomcat Migration Tool for Jakarta EE used to
+        provide automatic deployment for Java EE applications to 1.0.0. (markt)
+      </update>
     </changelog>
   </subsection>
 </section>
