@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.core;
 
 import java.util.concurrent.RejectedExecutionException;
@@ -315,8 +314,9 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
 
     @Override
     public boolean resizePool(int corePoolSize, int maximumPoolSize) {
-        if (executor == null)
+        if (executor == null) {
             return false;
+        }
 
         executor.setCorePoolSize(corePoolSize);
         executor.setMaximumPoolSize(maximumPoolSize);

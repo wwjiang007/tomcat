@@ -30,7 +30,8 @@ import org.apache.tomcat.util.security.MD5Encoder;
 public class DigestAuthenticator extends Authenticator {
 
     public static final String schemeName = "digest";
-    private SecureRandom cnonceGenerator;
+    private static final Object cnonceGeneratorLock = new Object();
+    private static volatile SecureRandom cnonceGenerator;
     private int nonceCount = 0;
     private long cNonce;
 
@@ -59,7 +60,11 @@ public class DigestAuthenticator extends Authenticator {
 
         if (!messageQop.isEmpty()) {
             if (cnonceGenerator == null) {
-                cnonceGenerator = new SecureRandom();
+                synchronized(cnonceGeneratorLock) {
+                    if (cnonceGenerator == null) {
+                        cnonceGenerator = new SecureRandom();
+                    }
+                }
             }
 
             cNonce = cnonceGenerator.nextLong();
@@ -102,11 +107,11 @@ public class DigestAuthenticator extends Authenticator {
         StringBuilder preDigest = new StringBuilder();
         String A1;
 
-        if (algorithm.equalsIgnoreCase("MD5"))
+        if (algorithm.equalsIgnoreCase("MD5")) {
             A1 = userName + ":" + realm + ":" + password;
-
-        else
+        } else {
             A1 = encodeMD5(userName + ":" + realm + ":" + password) + ":" + nonce + ":" + cNonce;
+        }
 
         /*
          * If the "qop" value is "auth-int", then A2 is: A2 = Method ":"

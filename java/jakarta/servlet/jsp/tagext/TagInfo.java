@@ -14,8 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-
 package jakarta.servlet.jsp.tagext;
 
 /**
@@ -97,8 +95,9 @@ public class TagInfo {
         this.tagVariableInfo = null;
         this.dynamicAttributes = false;
 
-        if (tagExtraInfo != null)
+        if (tagExtraInfo != null) {
             tagExtraInfo.setTagInfo(this);
+        }
     }
 
     /**
@@ -151,8 +150,9 @@ public class TagInfo {
         // Use defaults for unspecified values
         this.dynamicAttributes = false;
 
-        if (tagExtraInfo != null)
+        if (tagExtraInfo != null) {
             tagExtraInfo.setTagInfo(this);
+        }
     }
 
     /**
@@ -207,8 +207,9 @@ public class TagInfo {
         this.tagVariableInfo = tvi;
         this.dynamicAttributes = dynamicAttributes;
 
-        if (tagExtraInfo != null)
+        if (tagExtraInfo != null) {
             tagExtraInfo.setTagInfo(this);
+        }
     }
 
     /**

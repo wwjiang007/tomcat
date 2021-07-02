@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.jasper.runtime;
 
 import java.io.IOException;
@@ -98,8 +97,6 @@ public class PageContextImpl extends PageContext {
 
     private transient ELContextImpl elContext;
 
-    private boolean isIncluded;
-
 
     // initial output stream
     private transient JspWriter out;
@@ -139,10 +136,12 @@ public class PageContextImpl extends PageContext {
         this.applicationContext = JspApplicationContextImpl.getInstance(context);
 
         // Setup session (if required)
-        if (request instanceof HttpServletRequest && needsSession)
+        if (request instanceof HttpServletRequest && needsSession) {
             this.session = ((HttpServletRequest) request).getSession();
-        if (needsSession && session == null)
+        }
+        if (needsSession && session == null) {
             throw new IllegalStateException(Localizer.getMessage("jsp.error.page.sessionRequired"));
+        }
 
         // initialize the initial out ...
         depth = -1;
@@ -161,33 +160,21 @@ public class PageContextImpl extends PageContext {
         setAttribute(REQUEST, request);
         setAttribute(RESPONSE, response);
 
-        if (session != null)
+        if (session != null) {
             setAttribute(SESSION, session);
+        }
 
         setAttribute(PAGE, servlet);
         setAttribute(CONFIG, config);
         setAttribute(PAGECONTEXT, this);
         setAttribute(APPLICATION, context);
-
-        isIncluded = request.getAttribute(
-                RequestDispatcher.INCLUDE_SERVLET_PATH) != null;
     }
 
     @Override
     public void release() {
         out = baseOut;
         try {
-            if (isIncluded) {
-                ((JspWriterImpl) out).flushBuffer();
-                // push it into the including jspWriter
-            } else {
-                // Old code:
-                // out.flush();
-                // Do not flush the buffer even if we're not included (i.e.
-                // we are the main page. The servlet will flush it and close
-                // the stream.
-                ((JspWriterImpl) out).flushBuffer();
-            }
+            ((JspWriterImpl) out).flushBuffer();
         } catch (IOException ex) {
             IllegalStateException ise = new IllegalStateException(Localizer.getMessage("jsp.error.flush"), ex);
             throw ise;
@@ -334,8 +321,9 @@ public class PageContextImpl extends PageContext {
 
         if (session != null) {
             try {
-                if (session.getAttribute(name) != null)
+                if (session.getAttribute(name) != null) {
                     return SESSION_SCOPE;
+                }
             } catch(IllegalStateException ise) {
                 // Session has been invalidated.
                 // Ignore and fall through to application scope.
@@ -484,8 +472,9 @@ public class PageContextImpl extends PageContext {
         if (!path.startsWith("/")) {
             String uri = (String) request.getAttribute(
                     RequestDispatcher.INCLUDE_SERVLET_PATH);
-            if (uri == null)
+            if (uri == null) {
                 uri = ((HttpServletRequest) request).getServletPath();
+            }
             String baseURI = uri.substring(0, uri.lastIndexOf('/'));
             path = baseURI + '/' + path;
         }
@@ -532,8 +521,9 @@ public class PageContextImpl extends PageContext {
         final String path = getAbsolutePathRelativeToContext(relativeUrlPath);
         String includeUri = (String) request.getAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH);
 
-        if (includeUri != null)
+        if (includeUri != null) {
             request.removeAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH);
+        }
         try {
             context.getRequestDispatcher(path).forward(request, response);
         } finally {
@@ -653,12 +643,15 @@ public class PageContextImpl extends PageContext {
             // Otherwise throw the exception wrapped inside a ServletException.
             // Set the exception as the root cause in the ServletException
             // to get a stack trace for the real problem
-            if (t instanceof IOException)
+            if (t instanceof IOException) {
                 throw (IOException) t;
-            if (t instanceof ServletException)
+            }
+            if (t instanceof ServletException) {
                 throw (ServletException) t;
-            if (t instanceof RuntimeException)
+            }
+            if (t instanceof RuntimeException) {
                 throw (RuntimeException) t;
+            }
 
             Throwable rootCause = null;
             if (t instanceof JspException || t instanceof ELException ||

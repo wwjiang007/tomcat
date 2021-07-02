@@ -289,6 +289,8 @@ public abstract class ELContext {
     /**
      * Coerce the supplied object to the requested type.
      *
+     * @param <T>  The type to which the object should be coerced
+     *
      * @param obj  The object to be coerced
      * @param type The type to which the object should be coerced
      *
@@ -299,14 +301,14 @@ public abstract class ELContext {
      *
      * @since EL 3.0
      */
-    public Object convertToType(Object obj, Class<?> type) {
+    public <T> T convertToType(Object obj, Class<T> type) {
 
         boolean originalResolved = isPropertyResolved();
         setPropertyResolved(false);
         try {
             ELResolver resolver = getELResolver();
             if (resolver != null) {
-                Object result = resolver.convertToType(this, obj, type);
+                T result = resolver.convertToType(this, obj, type);
                 if (isPropertyResolved()) {
                     return result;
                 }

@@ -14,7 +14,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.apache.tomcat.util.net;
 
 import java.util.List;
@@ -51,8 +50,9 @@ public abstract class SSLImplementation {
      */
     public static SSLImplementation getInstance(String className)
             throws ClassNotFoundException {
-        if (className == null)
+        if (className == null) {
             return new JSSEImplementation();
+        }
 
         try {
             Class<?> clazz = Class.forName(className);
@@ -76,22 +76,7 @@ public abstract class SSLImplementation {
      * @return An instance of SSLSupport based on the given session and the
      *         provided additional attributes
      */
-    public SSLSupport getSSLSupport(SSLSession session, Map<String,List<String>> additionalAttributes) {
-        return getSSLSupport(session);
-    }
-
-    /**
-     * Obtain an instance of SSLSupport.
-     *
-     * @param session   The TLS session
-     *
-     * @return An instance of SSLSupport based on the given session.
-     *
-     * @deprecated This will be removed in Tomcat 10.1.x onwards.
-     *             Use {@link #getSSLSupport(SSLSession, Map)}.
-     */
-    @Deprecated
-    public abstract SSLSupport getSSLSupport(SSLSession session);
+    public abstract SSLSupport getSSLSupport(SSLSession session, Map<String,List<String>> additionalAttributes);
 
     public abstract SSLUtil getSSLUtil(SSLHostConfigCertificate certificate);
 

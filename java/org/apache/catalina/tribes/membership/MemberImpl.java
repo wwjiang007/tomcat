@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.tribes.membership;
 
 import java.io.IOException;
@@ -569,9 +568,9 @@ public class MemberImpl implements Member, java.io.Externalizable {
             return Arrays.equals(this.getHost(),((MemberImpl)o).getHost()) &&
                    this.getPort() == ((MemberImpl)o).getPort() &&
                    Arrays.equals(this.getUniqueId(),((MemberImpl)o).getUniqueId());
-        }
-        else
+        } else {
             return false;
+        }
     }
 
     public synchronized void setHost(byte[] host) {

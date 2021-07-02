@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.tribes.membership.cloud;
 
 import java.io.IOException;
@@ -76,8 +75,9 @@ public abstract class CloudMembershipProvider extends MembershipProviderBase imp
         String val = null;
         for (String key : keys) {
             val = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getenv(key));
-            if (val != null)
+            if (val != null) {
                 break;
+            }
         }
         return val;
     }

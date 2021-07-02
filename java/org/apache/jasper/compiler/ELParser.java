@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.jasper.compiler;
 
 import org.apache.jasper.JasperException;
@@ -407,8 +406,9 @@ public class ELParser {
         int start = index;
         while (hasNextChar()) {
             char c = expression.charAt(index);
-            if (c > ' ')
+            if (c > ' ') {
                 break;
+            }
             index++;
         }
         whiteSpace = expression.substring(start, index);

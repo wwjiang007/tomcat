@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package jakarta.el;
 
 import java.beans.BeanInfo;
@@ -37,8 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BeanELResolver extends ELResolver {
 
     private static final int CACHE_SIZE;
-    private static final String CACHE_SIZE_PROP =
-        "org.apache.el.BeanELResolver.CACHE_SIZE";
+    private static final String CACHE_SIZE_PROP = "org.apache.el.BeanELResolver.CACHE_SIZE";
 
     static {
         String cacheSizeStr;
@@ -53,8 +51,7 @@ public class BeanELResolver extends ELResolver {
 
     private final boolean readOnly;
 
-    private final ConcurrentCache<String, BeanProperties> cache =
-        new ConcurrentCache<>(CACHE_SIZE);
+    private final ConcurrentCache<String, BeanProperties> cache = new ConcurrentCache<>(CACHE_SIZE);
 
     public BeanELResolver() {
         this.readOnly = false;
@@ -137,7 +134,7 @@ public class BeanELResolver extends ELResolver {
 
         ExpressionFactory factory = ELManager.getExpressionFactory();
 
-        String methodName = (String) factory.coerceToType(method, String.class);
+        String methodName = factory.coerceToType(method, String.class);
 
         // Find the matching method
         Method matchingMethod =

@@ -42,8 +42,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public abstract class ExpressionFactory {
 
-    private static final boolean IS_SECURITY_ENABLED =
-        (System.getSecurityManager() != null);
+    private static final boolean IS_SECURITY_ENABLED = (System.getSecurityManager() != null);
 
     private static final String PROPERTY_NAME = "jakarta.el.ExpressionFactory";
 
@@ -217,6 +216,7 @@ public abstract class ExpressionFactory {
 
     /**
      * Coerce the supplied object to the requested type.
+     * @param <T>          The type to which the object should be coerced
      *
      * @param obj          The object to be coerced
      * @param expectedType The type to which the object should be coerced
@@ -226,7 +226,7 @@ public abstract class ExpressionFactory {
      * @throws ELException
      *              If the conversion fails
      */
-    public abstract Object coerceToType(Object obj, Class<?> expectedType);
+    public abstract <T> T coerceToType(Object obj, Class<T> expectedType);
 
     /**
      * @return This default implementation returns null

@@ -92,7 +92,7 @@ public interface ServletContext {
 
     /**
      * Returns the major version of the Java Servlet API that this servlet
-     * container supports. All implementations that comply with Version 5.0 must
+     * container supports. All implementations that comply with Version 5.1 must
      * have this method return the integer 5.
      *
      * @return 5
@@ -101,10 +101,10 @@ public interface ServletContext {
 
     /**
      * Returns the minor version of the Servlet API that this servlet container
-     * supports. All implementations that comply with Version 5.0 must have this
-     * method return the integer 0.
+     * supports. All implementations that comply with Version 5.1 must have this
+     * method return the integer 1.
      *
-     * @return 0
+     * @return 1
      */
     public int getMinorVersion();
 
@@ -425,8 +425,9 @@ public interface ServletContext {
      * parameter does not exist.
      * <p>
      * This method can make available configuration information useful to an
-     * entire "web application". For example, it can provide a webmaster's email
-     * address or the name of a system that holds critical data.
+     * entire "web application". For example, it can provide a web site
+     * administrator's email address or the name of a system that holds critical
+     * data.
      *
      * @param name
      *            a <code>String</code> containing the name of the parameter

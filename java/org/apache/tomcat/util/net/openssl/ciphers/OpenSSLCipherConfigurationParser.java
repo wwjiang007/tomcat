@@ -14,7 +14,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.apache.tomcat.util.net.openssl.ciphers;
 
 import java.util.ArrayList;
@@ -860,11 +859,11 @@ public class OpenSSLCipherConfigurationParser {
         for(argindex = 0; argindex < args.length; ++argindex)
         {
             String arg = args[argindex];
-            if("--verbose".equals(arg) || "-v".equals(arg))
+            if("--verbose".equals(arg) || "-v".equals(arg)) {
                 verbose = true;
-            else if("--openssl".equals(arg))
+            } else if("--openssl".equals(arg)) {
                 useOpenSSLNames = true;
-            else if("--help".equals(arg) || "-h".equals(arg)) {
+            } else if("--help".equals(arg) || "-h".equals(arg)) {
                 usage();
                 System.exit(0);
             }
@@ -895,13 +894,15 @@ public class OpenSSLCipherConfigurationParser {
                 if(first) {
                     first = false;
                 } else {
-                    if(!verbose)
+                    if(!verbose) {
                         System.out.print(',');
+                    }
                 }
-                if(useOpenSSLNames)
+                if(useOpenSSLNames) {
                     System.out.print(cipher.getOpenSSLAlias());
-                else
+                } else {
                     System.out.print(cipher.name());
+                }
                 if(verbose) {
                     System.out.println("\t" + cipher.getProtocol() + "\tKx=" + cipher.getKx() + "\tAu=" + cipher.getAu() + "\tEnc=" + cipher.getEnc() + "\tMac=" + cipher.getMac());
                 }

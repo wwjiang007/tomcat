@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.jasper.compiler;
 
 import java.beans.BeanInfo;
@@ -435,6 +434,11 @@ public class TestGenerator extends TomcatBaseTest {
         Assert.assertNotEquals(ids[0], ids[1]);
     }
 
+    @Test
+    public void testTryCatchFinally02() throws Exception {
+        doTestJsp("try-catch-finally-02.jsp");
+    }
+
     public static class JspIdTag extends TagSupport implements JspIdConsumer {
 
         private static final long serialVersionUID = 1L;
@@ -457,7 +461,7 @@ public class TestGenerator extends TomcatBaseTest {
         }
     }
 
-    public static class TryCatchFinallyTag extends BodyTagSupport implements TryCatchFinally {
+    public static class TryCatchFinallyBodyTag extends BodyTagSupport implements TryCatchFinally {
 
         private static final long serialVersionUID = 1L;
 
@@ -470,6 +474,21 @@ public class TestGenerator extends TomcatBaseTest {
             }
             return super.doStartTag();
         }
+
+        @Override
+        public void doCatch(Throwable t) throws Throwable {
+            // NO-OP
+        }
+
+        @Override
+        public void doFinally() {
+            // NO-OP
+        }
+    }
+
+    public static class TryCatchFinallyTag extends TagSupport implements TryCatchFinally {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public void doCatch(Throwable t) throws Throwable {
@@ -821,7 +840,7 @@ public class TestGenerator extends TomcatBaseTest {
 
     @Test
     public void testCustomTag01() throws Exception {
-        doTestJsp("try-catch-finally.jsp");
+        doTestJsp("try-catch-finally-01.jsp");
     }
 
     @Test
@@ -949,6 +968,16 @@ public class TestGenerator extends TomcatBaseTest {
 
         rc = getUrl("http://localhost:" + getPort() + "/test/jsp/generator/info.jsp", body, null);
         Assert.assertEquals(body.toString(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR, rc);
+    }
+
+    @Test
+    public void testBug65390() throws Exception {
+        getTomcatInstanceTestWebapp(false, true);
+
+        ByteChunk body = new ByteChunk();
+        int rc = getUrl("http://localhost:" + getPort() + "/test/bug6nnnn/bug65390.jsp", body, null);
+
+        Assert.assertEquals(body.toString(), HttpServletResponse.SC_OK, rc);
     }
 
     private void doTestJsp(String jspName) throws Exception {

@@ -31,7 +31,6 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.startup.TomcatBaseTest;
 import org.apache.tomcat.jni.Error;
-import org.apache.tomcat.jni.Library;
 import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.util.compat.JreCompat;
 
@@ -68,13 +67,7 @@ public class TestXxxEndpoint extends TomcatBaseTest {
         String address = InetAddress.getByName("localhost").getHostAddress();
 
         // Create the APR address that will be bound
-        int family = org.apache.tomcat.jni.Socket.APR_INET;
-        if (Library.APR_HAVE_IPV6) {
-            if (!org.apache.tomcat.jni.OS.IS_BSD && !org.apache.tomcat.jni.OS.IS_WIN32 &&
-                    !org.apache.tomcat.jni.OS.IS_WIN64) {
-                family = org.apache.tomcat.jni.Socket.APR_UNSPEC;
-            }
-         }
+        int family = org.apache.tomcat.jni.Socket.APR_UNSPEC;
 
         long inetAddress = 0;
         try {
@@ -220,10 +213,14 @@ public class TestXxxEndpoint extends TomcatBaseTest {
                 c.getProtocolHandlerClassName().contains("NioProtocol")
                 && JreCompat.isJre16Available());
 
-        final String unixDomainSocketPath = "/tmp/testUnixDomainSocket";
+        File tempPath = File.createTempFile("uds-tomcat-test-", ".sock");
+        String unixDomainSocketPath = tempPath.getAbsolutePath();
+        // Need to delete the file to make way for the actual socket
+        Assert.assertTrue(tempPath.delete());
         Assert.assertTrue(c.setProperty("unixDomainSocketPath", unixDomainSocketPath));
         tomcat.start();
 
+        // Connect to the domain socket as a client
         SocketAddress sa = JreCompat.getInstance().getUnixDomainSocketAddress(unixDomainSocketPath);
         ByteBuffer response = ByteBuffer.allocate(1024);
         try (SocketChannel socket = JreCompat.getInstance().openUnixDomainSocketChannel()) {

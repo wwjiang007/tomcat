@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.session;
 
 import java.io.BufferedInputStream;
@@ -733,8 +732,9 @@ public class DataSourceStore extends StoreBase {
     protected void close(Connection dbConnection) {
 
         // Do nothing if the database connection is already closed
-        if (dbConnection == null)
+        if (dbConnection == null) {
             return;
+        }
 
         // Commit if autoCommit is false
         try {

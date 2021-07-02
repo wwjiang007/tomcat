@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.el;
 
 import java.io.Externalizable;
@@ -316,16 +315,4 @@ public final class MethodExpressionImpl extends MethodExpression implements
     public boolean isParametersProvided() {
         return this.getNode().isParametersProvided();
     }
-
-    /**
-     * @since EL 2.2
-     * Note: The spelling mistake is deliberate.
-     * isParmetersProvided()  - Specification definition
-     * isParametersProvided() - Corrected spelling
-     */
-    @Override
-    public boolean isParmetersProvided() {
-        return this.getNode().isParametersProvided();
-    }
-
 }

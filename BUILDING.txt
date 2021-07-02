@@ -20,7 +20,7 @@
             ====================================================
 
 This project contains the source code for Tomcat @VERSION_MAJOR_MINOR@, a container that
-implements the Jakarta Servlet 5.0, JSP 3.0, EL 4.0, WebSocket 2.0 and
+implements the Jakarta Servlet 5.1, JSP 3.0, EL 5.0, WebSocket 2.0 and
 Authentication 2.0 specifications from the Jakarta EE project at Eclipse
 <https://jakarta.ee//>.
 
@@ -95,7 +95,7 @@ source distribution, do the following:
 (3.1) Checkout or obtain the source code for Tomcat @VERSION_MAJOR_MINOR@
 
 Clone the source using git, then checkout a specific major branch or
-master for the latest code development, or download and unpack a source
+main for the latest code development, or download and unpack a source
 package.
 
  *  Tomcat GitHub repository URL:

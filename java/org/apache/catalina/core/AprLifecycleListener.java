@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.core;
 
 
@@ -67,7 +66,7 @@ public class AprLifecycleListener
     protected static final int TCN_REQUIRED_MINOR = 2;
     protected static final int TCN_REQUIRED_PATCH = 14;
     protected static final int TCN_RECOMMENDED_MINOR = 2;
-    protected static final int TCN_RECOMMENDED_PV = 23;
+    protected static final int TCN_RECOMMENDED_PV = 30;
 
 
     // ---------------------------------------------- Properties
@@ -213,8 +212,8 @@ public class AprLifecycleListener
             return;
         }
         if (apver < rqver) {
-            log.error(sm.getString("aprListener.tcnInvalid", major + "."
-                    + minor + "." + patch,
+            log.error(sm.getString("aprListener.tcnInvalid",
+                    Library.versionString(),
                     TCN_REQUIRED_MAJOR + "." +
                     TCN_REQUIRED_MINOR + "." +
                     TCN_REQUIRED_PATCH));
@@ -230,17 +229,15 @@ public class AprLifecycleListener
         }
         if (apver < rcver) {
             initInfoLogMessages.add(sm.getString("aprListener.tcnVersion",
-                    major + "." + minor + "." + patch,
+                    Library.versionString(),
                     TCN_REQUIRED_MAJOR + "." +
                     TCN_RECOMMENDED_MINOR + "." +
                     TCN_RECOMMENDED_PV));
         }
 
         initInfoLogMessages.add(sm.getString("aprListener.tcnValid",
-                major + "." + minor + "." + patch,
-                Library.APR_MAJOR_VERSION + "." +
-                Library.APR_MINOR_VERSION + "." +
-                Library.APR_PATCH_VERSION));
+                Library.versionString(),
+                Library.aprVersionString()));
 
         // Log APR flags
         initInfoLogMessages.add(sm.getString("aprListener.flags",

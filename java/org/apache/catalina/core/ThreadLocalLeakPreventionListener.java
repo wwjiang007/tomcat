@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.catalina.core;
 
 import java.util.concurrent.Executor;
@@ -115,7 +114,9 @@ public class ThreadLocalLeakPreventionListener extends FrameworkListener {
      *            of its parent Service.
      */
     private void stopIdleThreads(Context context) {
-        if (serverStopping) return;
+        if (serverStopping) {
+            return;
+        }
 
         if (!(context instanceof StandardContext) ||
             !((StandardContext) context).getRenewThreadsWhenStoppingContext()) {
